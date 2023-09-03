@@ -2,6 +2,10 @@
 
 namespace Mittwald\ApiToolsPHP\Command;
 
+use Helmich\Schema2Class\Generator\SchemaToClassFactory;
+use Mittwald\ApiToolsPHP\Generator\ComponentGenerator;
+use Mittwald\ApiToolsPHP\Generator\Context;
+use Mittwald\ApiToolsPHP\Generator\Generator;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -18,13 +22,16 @@ class GenerateCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $schemaURL = $input->getArgument('schema');
+        $schemaURL  = $input->getArgument('schema');
         $outputPath = $input->getArgument('output');
 
         $output->writeln("Generating PHP classes from schema {$schemaURL} to {$outputPath}.");
 
-        $schema = json_decode(file_get_contents($schemaURL), true);
-        var_dump($schema);
+        $schema = json_decode(file_get_contents($schemaURL), associative: true);
+
+        $generatorContext = new Context($outputPath, $schema);
+        $generator        = new Generator($generatorContext, new ComponentGenerator($generatorContext, new SchemaToClassFactory()));
+        $generator->generateComponents();
 
         return 0;
     }
