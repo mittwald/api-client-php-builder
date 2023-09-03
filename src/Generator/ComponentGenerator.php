@@ -34,33 +34,6 @@ class ComponentGenerator
         $this->s2c = new SchemaToClassFactory();
     }
 
-    private function buildReferenceLookup(): ReferenceLookup {
-        return new class($this->context) implements ReferenceLookup {
-            public function __construct(private readonly Context $context) {}
-
-            public function lookupReference(string $reference): ReferencedType
-            {
-                echo "looking up {$reference}";
-
-                [,, $componentType, $name] = explode("/", $reference);
-
-                $componentNamespace = ucfirst($componentType);
-                $baseNamespace      = "Mittwald\\ApiClient\\Generated\\V{$this->context->version}\\{$componentNamespace}";
-
-                $className = ComponentGenerator::componentNameToClassName($name);
-                $fqcn = $baseNamespace . "\\" . $className;
-
-                $schema = $this->context->schema["components"][$componentType][$name];
-
-                return match (true) {
-                    isset($schema["enum"]) => new ReferencedTypeEnum($fqcn),
-                    isset($schema["items"]["\$ref"]) => new ReferencedTypeList($this->lookupReference($schema["items"]["\$ref"])),
-                    default => new ReferencedTypeClass($fqcn),
-                };
-            }
-        };
-    }
-
     public function generate(string $baseNamespace, array $component, string $componentName): void
     {
         if (!isset($component["properties"]) && !(isset($component["enum"]))) {
@@ -76,7 +49,7 @@ class ComponentGenerator
         $spec = new ValidatedSpecificationFilesItem($namespace, $classNameWithoutNamespace, $outputDir);
         $opts = (new SpecificationOptions())->withTargetPHPVersion("8.2");
         $request = new GeneratorRequest($component, $spec, $opts);
-        $request = $request->withReferenceLookup($this->buildReferenceLookup());
+        $request = $request->withReferenceLookup(new SchemaReferenceLookup($this->context));
         $output = new ConsoleOutput();
         $writer = new FileWriter($output);
 
