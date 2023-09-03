@@ -71,9 +71,7 @@ class ComponentGenerator
         $className = $baseNamespace . "\\" . static::componentNameToClassName($componentName);
         $namespace = substr($className, 0, strrpos($className, "\\"));
         $classNameWithoutNamespace = substr($className, strrpos($className, "\\") + 1);
-        $outputDir = $this->context->outputPath . "/src/" . str_replace("\\", "/", str_replace("Mittwald\\ApiClient\\", "", $namespace));
-
-        echo $className . "\n";
+        $outputDir = GeneratorUtil::outputDirForClass($this->context, $className);
 
         $spec = new ValidatedSpecificationFilesItem($namespace, $classNameWithoutNamespace, $outputDir);
         $opts = (new SpecificationOptions())->withTargetPHPVersion("8.2");
