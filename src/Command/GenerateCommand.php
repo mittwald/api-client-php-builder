@@ -3,6 +3,7 @@
 namespace Mittwald\ApiToolsPHP\Command;
 
 use Helmich\Schema2Class\Generator\SchemaToClassFactory;
+use Mittwald\ApiToolsPHP\Generator\ClientFactoryGenerator;
 use Mittwald\ApiToolsPHP\Generator\ClientGenerator;
 use Mittwald\ApiToolsPHP\Generator\ComponentGenerator;
 use Mittwald\ApiToolsPHP\Generator\Context;
@@ -28,11 +29,16 @@ class GenerateCommand extends Command
 
         $output->writeln("Generating PHP classes from schema {$schemaURL} to {$outputPath}.");
 
-        $schema = json_decode(file_get_contents($schemaURL), associative: true);
+        $schema        = json_decode(file_get_contents($schemaURL), associative: true);
         $schemaFactory = new SchemaToClassFactory();
 
         $generatorContext = new Context($outputPath, $schema);
-        $generator        = new Generator($generatorContext, new ComponentGenerator($generatorContext, $schemaFactory), new ClientGenerator($generatorContext, $schemaFactory));
+        $generator        = new Generator(
+            $generatorContext,
+            new ComponentGenerator($generatorContext, $schemaFactory),
+            new ClientGenerator($generatorContext, $schemaFactory),
+            new ClientFactoryGenerator($generatorContext, $schemaFactory),
+        );
         $generator->generateComponents();
         $generator->generateClients();
 
