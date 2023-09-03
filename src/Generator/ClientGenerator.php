@@ -129,6 +129,12 @@ class ClientGenerator
             $url = str_replace(" . ''", "", $url);
         }
 
+        $bodySchema = $operationData["requestBody"]["content"]["application/json"]["schema"] ?? null;
+        if ($bodySchema !== null) {
+            $paramClassSchema["properties"]["body"] = $bodySchema;
+            $paramClassSchema["required"][]         = "body";
+        }
+
         $getUrlBody   .= "return {$url};\n";
         $getUrlMethod = new MethodGenerator(name: "getUrl", body: $getUrlBody);
         $getUrlMethod->setReturnType("string");
@@ -143,13 +149,23 @@ class ClientGenerator
         $req = new GeneratorRequest($paramClassSchema, new ValidatedSpecificationFilesItem($paramClassNamespace, $paramClassName, $outputDir), $generatorOpts);
         $req = $req->withAdditionalProperty(new PropertyGenerator(name: "method", defaultValue: $httpMethod, flags: PropertyGenerator::FLAG_PUBLIC | PropertyGenerator::FLAG_CONSTANT));
         $req = $req->withAdditionalMethod($getUrlMethod);
+        $req = $req->withReferenceLookup($this->referenceLookup);
 
         $this->classBuilder->schemaToClass($req);
 
-        $body .= "\$request = new Request(\\" . $paramClassNameFQ . "::method, \$request->getUrl());\n";
-        $body .= "\$response = \$this->client->send(\$request);\n";
+        $body .= "\$httpRequest = new Request(\\" . $paramClassNameFQ . "::method, \$request->getUrl());\n";
 
-        $responseMatchBuilder = new MatchGenerator("\$response->getStatusCode()");
+        if ($bodySchema !== null) {
+            if (isset($bodySchema["type"]) && $bodySchema["type"] === "array") {
+                $body .= "\$httpResponse = \$this->client->send(\$httpRequest, ['json' => \$request->toJson()['body']]);\n";
+            } else {
+                $body .= "\$httpResponse = \$this->client->send(\$httpRequest, ['json' => \$request->getBody()->toJson()]);\n";
+            }
+        } else {
+            $body .= "\$httpResponse = \$this->client->send(\$httpRequest);\n";
+        }
+
+        $responseMatchBuilder = new MatchGenerator("\$httpResponse->getStatusCode()");
         $responses            = $operationData["responses"] ?? [];
         $responseTypes        = [];
 
@@ -166,7 +182,7 @@ class ClientGenerator
 
             if (!isset($response["content"]["application/json"]["schema"])) {
                 $responseTypes[] = "string";
-                $responseMatchBuilder->addArm($statusCode, "\$response->getBody()");
+                $responseMatchBuilder->addArm($statusCode, "\$httpResponse->getBody()");
                 continue;
             }
 
@@ -183,7 +199,7 @@ class ClientGenerator
             if (ReferenceProperty::canHandleSchema($responseSchema)) {
                 $ref             = $this->referenceLookup->lookupReference($responseSchema['$ref']);
                 $responseTypes[] = $ref->typeHint($req);
-                $responseMatchBuilder->addArm($statusCode, $ref->inputMappingExpr($req, 'json_decode($response->getBody(), true)'));
+                $responseMatchBuilder->addArm($statusCode, $ref->inputMappingExpr($req, 'json_decode($httpResponse->getBody(), true)'));
                 continue;
             }
 
@@ -202,20 +218,20 @@ class ClientGenerator
                 $this->classBuilder->schemaToClass($req);
 
                 $responseTypes[] = $responseClassNameFQ;
-                $responseMatchBuilder->addArm($statusCode, "new \\{$responseClassNameFQ}(items: json_decode(\$response->getBody(), true))");
+                $responseMatchBuilder->addArm($statusCode, "new \\{$responseClassNameFQ}(items: json_decode(\$httpResponse->getBody(), true))");
                 continue;
             }
 
             if (!NestedObjectProperty::canHandleSchema($responseSchema)) {
                 $responseTypes[] = "mixed";
-                $responseMatchBuilder->addArm($statusCode, "json_decode(\$response->getBody(), true)");
+                $responseMatchBuilder->addArm($statusCode, "json_decode(\$httpResponse->getBody(), true)");
                 continue;
             }
 
             $this->classBuilder->schemaToClass($req);
 
             $responseTypes[] = $responseClassNameFQ;
-            $responseMatchBuilder->addArm($statusCode, "\\{$responseClassNameFQ}::buildFromInput(json_decode(\$response->getBody(), true))");
+            $responseMatchBuilder->addArm($statusCode, "\\{$responseClassNameFQ}::buildFromInput(json_decode(\$httpResponse->getBody(), true))");
         }
 
         $body .= "return " . $responseMatchBuilder->generate() . ";\n";
