@@ -16,7 +16,7 @@
   ],
   "require": {
     "symfony/console": "^6.3",
-    "helmich/schema2class": "dev-numbers"
+    "helmich/schema2class": "dev-custom-props"
   },
   "minimum-stability": "dev",
   "prefer-stable": true

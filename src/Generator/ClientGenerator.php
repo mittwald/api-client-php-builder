@@ -92,8 +92,7 @@ class ClientGenerator
         $generatorOpts = (new SpecificationOptions())
             ->withTargetPHPVersion("8.2");
 
-        $pathParameters          = array_filter($operationData["parameters"] ?? [], fn(array $in): bool => $in["in"] === "path");
-        $pathParameterGenerators = [];
+        $pathParameters = array_filter($operationData["parameters"] ?? [], fn(array $in): bool => $in["in"] === "path");
 
         $url = var_export($path, true);
 
@@ -103,31 +102,51 @@ class ClientGenerator
         $paramClassNameFQ = $namespace . "\\" . $paramClassName;
         $outputDir        = GeneratorUtil::outputDirForClass($this->context, $paramClassNameFQ);
 
+        $paramClassSchema = [
+            "type"       => "object",
+            "properties" => [],
+            "required"   => [],
+        ];
+
+        $getUrlBody = "\$mapped = \$this->toJson();\n";
+
         foreach ($pathParameters as $param) {
-            $req = new GeneratorRequest($param, new ValidatedSpecificationFilesItem($namespace, $paramClassName, $outputDir), $generatorOpts);
+            $paramClassSchema["properties"][$param["name"]] = $param["schema"];
+            if ($param["required"]) {
+                $paramClassSchema["required"][] = $param["name"];
+            }
 
-            $prop = PropertyBuilder::buildPropertyFromSchema($req, $param["name"], $param["schema"], true);
-            $prop->generateSubTypes($this->classBuilder);
+            $paramName = $param["name"];
+            $paramNameStr = var_export($paramName, true);
+            $getUrlBody .= "\${$paramName} = urlencode(\$mapped[{$paramNameStr}]);\n";
 
-            $paramNameForUrl = $param["name"] . "ForUrl";
-
-            $body .= "\${$paramNameForUrl} = urlencode(" . $prop->generateOutputMappingExpr("\${$param["name"]}") . ");\n";
-
-            $url = str_replace("{{$param["name"]}}", '\' . $' . $paramNameForUrl . ' . \'', $url);
+            $url = str_replace("{{$param["name"]}}", '\' . $' . $paramName . ' . \'', $url);
             $url = str_replace(" . ''", "", $url);
-
-            $pathParameterGenerators[] = new ParameterGenerator(
-                name: $prop->key(),
-                type: $prop->typeHint("8.2"),
-            );
         }
 
-        $body .= "\$request = new Request(" . var_export($httpMethod, true) . ", {$url});\n";
+        $getUrlBody .= "return {$url};\n";
+        $getUrlMethod = new MethodGenerator(name: "getUrl", body: $getUrlBody);
+        $getUrlMethod->setReturnType("string");
+
+        $parameterGenerators = [
+            new ParameterGenerator(
+                name: "request",
+                type: $paramClassNameFQ,
+            ),
+        ];
+
+        $req = new GeneratorRequest($paramClassSchema, new ValidatedSpecificationFilesItem($namespace, $paramClassName, $outputDir), $generatorOpts);
+        $req = $req->withAdditionalProperty(new PropertyGenerator(name: "method", defaultValue: $httpMethod, flags: PropertyGenerator::FLAG_PUBLIC | PropertyGenerator::FLAG_CONSTANT));
+        $req = $req->withAdditionalMethod($getUrlMethod);
+
+        $this->classBuilder->schemaToClass($req);
+
+        $body .= "\$request = new Request(" . $paramClassName . "::method, \$request->getUrl());\n";
         $body .= "\$response = \$this->client->send(\$request);\n";
 
         $method = new MethodGenerator(name: $methodName);
         $method->setBody($body);
-        $method->setParameters($pathParameterGenerators);
+        $method->setParameters($parameterGenerators);
 
         return $method;
     }
