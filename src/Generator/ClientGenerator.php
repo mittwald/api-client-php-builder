@@ -26,7 +26,7 @@ class ClientGenerator
     private WriterInterface $writer;
     private SchemaReferenceLookup $referenceLookup;
 
-    public function __construct(private Context $context, SchemaToClassFactory $s2c = new SchemaToClassFactory())
+    public function __construct(private readonly Context $context, SchemaToClassFactory $s2c = new SchemaToClassFactory())
     {
         $output                = new ConsoleOutput();
         $this->writer          = new FileWriter($output);
