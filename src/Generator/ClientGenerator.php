@@ -96,6 +96,7 @@ class ClientGenerator
     private function buildOperationRequestClass(string $namespace, string $methodName, string $httpMethod, string $path, array $operationData): string
     {
         $pathParameters = array_filter($operationData["parameters"] ?? [], fn(array $in): bool => $in["in"] === "path");
+        $queryParameters = array_filter($operationData["parameters"] ?? [], fn(array $in): bool => $in["in"] === "query");
 
         $url = var_export($path, true);
 
@@ -111,6 +112,7 @@ class ClientGenerator
         ];
 
         $getUrlBody = "\$mapped = \$this->toJson();\n";
+        $getQueryBody = "\$mapped = \$this->toJson();\n\$query = [];\n";
 
         foreach ($pathParameters as $param) {
             $paramClassSchema["properties"][$param["name"]] = $param["schema"];
@@ -126,9 +128,24 @@ class ClientGenerator
             $url = str_replace(" . ''", "", $url);
         }
 
+        foreach ($queryParameters as $param) {
+            $paramClassSchema["properties"][$param["name"]] = $param["schema"];
+            if ($param["required"]) {
+                $paramClassSchema["required"][] = $param["name"];
+            }
+
+            $paramName    = $param["name"];
+            $paramNameStr = var_export($paramName, true);
+            $getQueryBody .= "if (isset(\$mapped[{$paramNameStr}])) {\n    \$query[{$paramNameStr}] = \$mapped[{$paramNameStr}];\n}\n";
+        }
+
         $getUrlBody   .= "return {$url};\n";
         $getUrlMethod = new MethodGenerator(name: "getUrl", body: $getUrlBody);
         $getUrlMethod->setReturnType("string");
+
+        $getQueryBody .= "return \$query;\n";
+        $getQueryMethod = new MethodGenerator(name: "getQuery", body: $getQueryBody);
+        $getQueryMethod->setReturnType("array");
 
         $bodySchema = $operationData["requestBody"]["content"]["application/json"]["schema"] ?? null;
         if ($bodySchema !== null) {
@@ -141,6 +158,7 @@ class ClientGenerator
         $req = new GeneratorRequest($paramClassSchema, new ValidatedSpecificationFilesItem($paramClassNamespace, $paramClassName, $outputDir), $this->generatorOpts);
         $req = $req->withAdditionalProperty($methodProperty);
         $req = $req->withAdditionalMethod($getUrlMethod);
+        $req = $req->withAdditionalMethod($getQueryMethod);
         $req = $req->withReferenceLookup($this->referenceLookup);
 
         $this->classBuilder->schemaToClass($req);
@@ -163,15 +181,18 @@ class ClientGenerator
         $body = "\$httpRequest = new Request(\\" . $parameterClass . "::method, \$request->getUrl());\n";
 
         $bodySchema = $operationData["requestBody"]["content"]["application/json"]["schema"] ?? null;
+        $body .= "\$httpResponse = \$this->client->send(\$httpRequest, [\n";
+        $body .= "    'query' => \$request->getQuery(),\n";
+
         if ($bodySchema !== null) {
             if (isset($bodySchema["type"]) && $bodySchema["type"] === "array") {
-                $body .= "\$httpResponse = \$this->client->send(\$httpRequest, ['json' => \$request->toJson()['body']]);\n";
+                $body .= "    'json' => \$request->toJson()['body'],\n";
             } else {
-                $body .= "\$httpResponse = \$this->client->send(\$httpRequest, ['json' => \$request->getBody()->toJson()]);\n";
+                $body .= "    'json' => \$request->getBody()->toJson(),\n";
             }
-        } else {
-            $body .= "\$httpResponse = \$this->client->send(\$httpRequest);\n";
         }
+
+        $body .= "]);\n";
 
         $responseMatchBuilder = new MatchGenerator("\$httpResponse->getStatusCode()");
         $responses            = $operationData["responses"] ?? [];
