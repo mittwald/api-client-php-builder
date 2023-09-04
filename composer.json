@@ -16,7 +16,7 @@
   ],
   "require": {
     "symfony/console": "^6.3",
-    "helmich/schema2class": "dev-bugfix-assoc-array"
+    "helmich/schema2class": "dev-feature-skip-validation"
   },
   "minimum-stability": "dev",
   "prefer-stable": true

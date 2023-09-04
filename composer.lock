@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "515ffad778af01aaa76b1b16346740c7",
+    "content-hash": "a9fc913b4ea7ef69e9f944b9d4581dcf",
     "packages": [
         {
             "name": "composer/semver",
@@ -89,16 +89,16 @@
         },
         {
             "name": "helmich/schema2class",
-            "version": "dev-bugfix-assoc-array",
+            "version": "dev-feature-skip-validation",
             "source": {
                 "type": "git",
                 "url": "https://github.com/martin-helmich/php-schema2class.git",
-                "reference": "3888ccbac161ff9e67ea2c872028aa4bb6837683"
+                "reference": "8bda05464f74201614ada14f436851c02310b479"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/martin-helmich/php-schema2class/zipball/3888ccbac161ff9e67ea2c872028aa4bb6837683",
-                "reference": "3888ccbac161ff9e67ea2c872028aa4bb6837683",
+                "url": "https://api.github.com/repos/martin-helmich/php-schema2class/zipball/8bda05464f74201614ada14f436851c02310b479",
+                "reference": "8bda05464f74201614ada14f436851c02310b479",
                 "shasum": ""
             },
             "require": {
@@ -138,7 +138,7 @@
             "description": "Build PHP classes from JSON schema definitions",
             "support": {
                 "issues": "https://github.com/martin-helmich/php-schema2class/issues",
-                "source": "https://github.com/martin-helmich/php-schema2class/tree/bugfix-assoc-array"
+                "source": "https://github.com/martin-helmich/php-schema2class/tree/feature-skip-validation"
             },
             "funding": [
                 {
@@ -150,7 +150,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2023-09-03T17:20:20+00:00"
+            "time": "2023-09-03T21:31:19+00:00"
         },
         {
             "name": "justinrainbow/json-schema",

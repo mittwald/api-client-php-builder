@@ -218,7 +218,7 @@ class ClientGenerator
                 $this->classBuilder->schemaToClass($req);
 
                 $responseTypes[] = $responseClassNameFQ;
-                $responseMatchBuilder->addArm($statusCode, "new \\{$responseClassNameFQ}(items: json_decode(\$httpResponse->getBody(), true))");
+                $responseMatchBuilder->addArm($statusCode, "\\{$responseClassNameFQ}::buildFromInput(['items' => json_decode(\$httpResponse->getBody(), true)], validate: false)");
                 continue;
             }
 
@@ -231,7 +231,7 @@ class ClientGenerator
             $this->classBuilder->schemaToClass($req);
 
             $responseTypes[] = $responseClassNameFQ;
-            $responseMatchBuilder->addArm($statusCode, "\\{$responseClassNameFQ}::buildFromInput(json_decode(\$httpResponse->getBody(), true))");
+            $responseMatchBuilder->addArm($statusCode, "\\{$responseClassNameFQ}::buildFromInput(json_decode(\$httpResponse->getBody(), true), validate: false)");
         }
 
         $body .= "return " . $responseMatchBuilder->generate() . ";\n";
