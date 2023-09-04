@@ -36,6 +36,21 @@ class ComponentGenerator
 
     public function generate(string $baseNamespace, array $component, string $componentName): void
     {
+        // Special treatment for inlined enums
+        if (isset($component["items"]["enum"])) {
+            $this->generate($baseNamespace, $component["items"], $componentName . "Item");
+            return;
+        }
+
+        if (isset($component["oneOf"])) {
+            foreach ($component["oneOf"] as $id => $oneOf) {
+                if (!isset($oneOf['$ref'])) {
+                    $this->generate($baseNamespace, $oneOf, $componentName . "Alternative" . ($id + 1));
+                }
+            }
+            return;
+        }
+
         if (!isset($component["properties"]) && !(isset($component["enum"]))) {
             trigger_error("Component {$componentName} is not an object, skipping.", E_USER_WARNING);
             return;

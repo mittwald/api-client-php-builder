@@ -13,7 +13,8 @@ class SchemaReferenceLookup implements ReferenceLookup
     {
     }
 
-    private static function isUnionOfReferences(array $schema): bool {
+    private static function isUnionOfReferences(array $schema): bool
+    {
         if (!isset($schema["oneOf"])) {
             return false;
         }
@@ -27,6 +28,37 @@ class SchemaReferenceLookup implements ReferenceLookup
         return true;
     }
 
+    private static function isUnionOfInlines(array $schema): bool
+    {
+        if (!isset($schema["oneOf"])) {
+            return false;
+        }
+
+        foreach ($schema["oneOf"] as $oneOf) {
+            if (isset($oneOf['$ref'])) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private function buildUnionType(string $fqcn, array $types): ReferencedType
+    {
+        /** @var ReferencedType[] $innerRefs */
+        $innerRefs = [];
+
+        foreach ($types as $i => $alt) {
+            if (isset($alt['$ref'])) {
+                $innerRefs[] = $this->lookupReference($alt['$ref']);
+            } else {
+                $innerRefs[] = $this->buildTypeReference($fqcn . 'Alternative' . ($i + 1), $alt);
+            }
+        }
+
+        return new ReferencedUnion($innerRefs);
+    }
+
     public function lookupReference(string $reference): ReferencedType
     {
         [, , $componentType, $name] = explode("/", $reference);
@@ -38,12 +70,17 @@ class SchemaReferenceLookup implements ReferenceLookup
         $fqcn      = $baseNamespace . "\\" . $className;
 
         $schema = $this->context->schema["components"][$componentType][$name];
+        return $this->buildTypeReference($fqcn, $schema);
+    }
 
+    private function buildTypeReference(string $fqcn, array $schema): ReferencedType
+    {
         return match (true) {
             isset($schema["enum"]) => new ReferencedTypeEnum($fqcn),
             isset($schema["items"]["\$ref"]) => new ReferencedTypeList($this->lookupReference($schema["items"]["\$ref"])),
+            isset($schema["items"]["enum"]) => new ReferencedTypeList(new ReferencedTypeEnum($fqcn . "Item")),
             isset($schema["type"]) && $schema["type"] === "string" => new ReferencedString(),
-            static::isUnionOfReferences($schema) => new ReferencedUnion(array_map(fn(array $schema) => $this->lookupReference($schema['$ref']), $schema["oneOf"])),
+            isset($schema["oneOf"]) => $this->buildUnionType($fqcn, $schema["oneOf"]),
             default => new ReferencedTypeClass($fqcn),
         };
     }
