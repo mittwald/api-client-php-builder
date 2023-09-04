@@ -18,7 +18,11 @@ class ReferencedTypeList implements ReferencedType
 
     function typeAnnotation(GeneratorRequest $req): string
     {
-        return "{$this->innerType->typeAnnotation($req)}[]";
+        $innerAnnotation = $this->innerType->typeAnnotation($req);
+        if (str_contains($innerAnnotation, "|")) {
+            return "({$innerAnnotation})[]";
+        }
+        return "{$innerAnnotation}[]";
     }
 
     function typeHint(GeneratorRequest $req): ?string
