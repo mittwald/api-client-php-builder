@@ -1,0 +1,53 @@
+on:
+  schedule:
+    - cron: '0 0 * * *'
+
+jobs:
+  generate:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: shivammathur/setup-php
+        with:
+          php-version: '8.2'
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-suggest
+
+      - name: Checkout client to subdirectory
+        uses: actions/checkout@v3
+        with:
+          repository: 'mittwald/api-client-php'
+          path: '.work'
+          token: ${{ secrets.MACHINE_USER_TOKEN }}
+
+      - name: Generate client
+        run: php ./cmd/generate.php generate https://api.mittwald.de/openapi ./.work -v
+
+      - run: git status
+        working-directory: .work
+
+      - name: Create and push commit
+        working-directory: .work
+        run: |
+          if [[ $(git status --porcelain | wc -l) -eq 0 ]]; then
+            echo "No changes detected, skipping commit."
+            exit 0
+          fi
+          
+          set -ex
+          
+          git config --global user.name "mittwald-machine"
+          git config --global user.email "opensource@mittwald.de"
+          git add src
+          git commit -m "Update generated client"
+          
+          last_tag=$(git describe --abbrev=0 --tags)
+          new_tag=$(php ../cmd/generate.php version "${last_tag}")
+          
+          git tag -m "Release ${new_tag}" ${new_tag}
+          gut remote add publish "https://mittwald-macine:${{ secrets.MACHINE_USER_TOKEN }}@$github.com/mittwald/api-client-php.git"
+          git push publish
+          git push --tags publish
