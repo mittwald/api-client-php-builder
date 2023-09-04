@@ -5,6 +5,8 @@ namespace Mittwald\ApiToolsPHP\Generator;
 use Helmich\Schema2Class\Generator\GeneratorRequest;
 use Helmich\Schema2Class\Generator\MatchGenerator;
 use Helmich\Schema2Class\Generator\Property\NestedObjectProperty;
+use Helmich\Schema2Class\Generator\Property\ObjectArrayProperty;
+use Helmich\Schema2Class\Generator\Property\ReferenceArrayProperty;
 use Helmich\Schema2Class\Generator\Property\ReferenceProperty;
 use Helmich\Schema2Class\Generator\SchemaToClass;
 use Helmich\Schema2Class\Generator\SchemaToClassFactory;
@@ -194,50 +196,52 @@ class ClientGenerator
 
             $responseSchema = $response["content"]["application/json"]["schema"];
 
-            $responseClassName      = ucfirst($methodName) . $statusCode . "Response";
+            $responseClassName      = ucfirst($methodName) . ($statusCode === "default" ? "Default" : $statusCode) . "Response";
             $responseClassNamespace = $namespace . "\\" . ucfirst($methodName);
             $responseClassNameFQ    = $responseClassNamespace . "\\" . $responseClassName;
             $outputDir              = GeneratorUtil::outputDirForClass($this->context, $responseClassNameFQ);
 
-            $req = new GeneratorRequest($responseSchema, new ValidatedSpecificationFilesItem($responseClassNamespace, $responseClassName, $outputDir), $this->generatorOpts);
+            $factoryMethod = new MethodGenerator(
+                name: "fromResponse",
+                parameters: [
+                    new ParameterGenerator(name: "httpResponse", type: TypeGenerator::fromTypeString("\\Psr\\Http\\Message\\ResponseInterface")),
+                ],
+                flags: MethodGenerator::FLAG_STATIC | MethodGenerator::FLAG_PUBLIC,
+                body: "\$parsedBody = json_decode(\$httpResponse->getBody()->getContents(), associative: true);\n" .
+                "\$response = static::buildFromInput(['body' => \$parsedBody], validate: false);\n" .
+                "\$response->httpResponse = \$httpResponse;\n" .
+                "return \$response;",
+            );
+            $factoryMethod->setReturnType("self");
+
+            $httpResponseProperty = new PropertyGenerator(
+                name: "httpResponse",
+                type: TypeGenerator::fromTypeString("\\Psr\\Http\\Message\\ResponseInterface|null"),
+            );
+
+            $envelopedResponseSchema = [
+                "type"       => "object",
+                "required"   => ["body"],
+                "properties" => [
+                    "body" => $responseSchema,
+                ],
+            ];
+
+            $req = new GeneratorRequest($envelopedResponseSchema, new ValidatedSpecificationFilesItem($responseClassNamespace, $responseClassName, $outputDir), $this->generatorOpts);
             $req = $req->withReferenceLookup($this->referenceLookup);
+            $req = $req->withAdditionalMethod($factoryMethod);
+            $req = $req->withAdditionalProperty($httpResponseProperty);
 
-            if (ReferenceProperty::canHandleSchema($responseSchema)) {
-                $ref             = $this->referenceLookup->lookupReference($responseSchema['$ref']);
-                $responseTypes[] = $ref->typeHint($req);
-                $responseMatchBuilder->addArm($statusCode, $ref->inputMappingExpr($req, expr: 'json_decode($httpResponse->getBody(), true)', validateExpr: 'false'));
-                continue;
-            }
-
-            if (isset($responseSchema["type"]) && $responseSchema["type"] === "array") {
-                $newResponseSchema = [
-                    "type"       => "object",
-                    "required"   => ["items"],
-                    "properties" => [
-                        "items" => $responseSchema,
-                    ],
-                ];
-
-                $req = new GeneratorRequest($newResponseSchema, new ValidatedSpecificationFilesItem($responseClassNamespace, $responseClassName, $outputDir), $this->generatorOpts);
-                $req = $req->withReferenceLookup($this->referenceLookup);
-
-                $this->classBuilder->schemaToClass($req);
-
-                $responseTypes[] = $responseClassNameFQ;
-                $responseMatchBuilder->addArm($statusCode, "\\{$responseClassNameFQ}::buildFromInput(['items' => json_decode(\$httpResponse->getBody(), true)], validate: false)");
-                continue;
-            }
-
-            if (!NestedObjectProperty::canHandleSchema($responseSchema)) {
+            if (!NestedObjectProperty::canHandleSchema($responseSchema) && !ReferenceProperty::canHandleSchema($responseSchema) && !ReferenceArrayProperty::canHandleSchema($responseSchema) && !ObjectArrayProperty::canHandleSchema($responseSchema)) {
                 $responseTypes[] = "\\Mittwald\\ApiClient\\Client\\UntypedResponse";
-                $responseMatchBuilder->addArm($statusCode, "new \\Mittwald\\ApiClient\\Client\\UntypedResponse(json_decode(\$httpResponse->getBody(), true), \$httpResponse)");
+                $responseMatchBuilder->addArm($statusCode, "\\Mittwald\\ApiClient\\Client\\UntypedResponse::fromResponse(\$httpResponse)");
                 continue;
             }
 
             $this->classBuilder->schemaToClass($req);
 
             $responseTypes[] = $responseClassNameFQ;
-            $responseMatchBuilder->addArm($statusCode, "\\{$responseClassNameFQ}::buildFromInput(json_decode(\$httpResponse->getBody(), true), validate: false)");
+            $responseMatchBuilder->addArm($statusCode, "\\{$responseClassNameFQ}::fromResponse(\$httpResponse)");
         }
 
         $body .= "return " . $responseMatchBuilder->generate() . ";\n";
