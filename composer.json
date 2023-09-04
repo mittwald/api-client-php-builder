@@ -16,7 +16,7 @@
   ],
   "require": {
     "symfony/console": "^6.3",
-    "helmich/schema2class": "dev-bugfix-psalm-issues"
+    "helmich/schema2class": "^3.0"
   },
   "minimum-stability": "dev",
   "prefer-stable": true
