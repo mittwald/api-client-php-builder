@@ -93,12 +93,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/martin-helmich/php-schema2class.git",
-                "reference": "83f611b6a43f1b079ebb93b0186151f116151e7c"
+                "reference": "4a004acfce8e3be9156c920acb2ee5f4159f1a0c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/martin-helmich/php-schema2class/zipball/83f611b6a43f1b079ebb93b0186151f116151e7c",
-                "reference": "83f611b6a43f1b079ebb93b0186151f116151e7c",
+                "url": "https://api.github.com/repos/martin-helmich/php-schema2class/zipball/4a004acfce8e3be9156c920acb2ee5f4159f1a0c",
+                "reference": "4a004acfce8e3be9156c920acb2ee5f4159f1a0c",
                 "shasum": ""
             },
             "require": {
@@ -150,7 +150,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2023-09-04T12:47:54+00:00"
+            "time": "2023-09-04T13:16:23+00:00"
         },
         {
             "name": "justinrainbow/json-schema",

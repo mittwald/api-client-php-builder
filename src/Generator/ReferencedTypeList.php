@@ -47,9 +47,15 @@ class ReferencedTypeList implements ReferencedType
     {
         $innerType = $this->innerType->typeHint($req);
         if ($innerType) {
-            return "array_map(fn(\$item): {$innerType} => {$this->innerType->inputMappingExpr($req, '$item', $validateExpr)}, $expr)";
+            $innerType = " : {$innerType}";
         }
-        return "array_map(fn(\$item) => {$this->innerType->inputMappingExpr($req, '$item', $validateExpr)}, $expr)";
+
+        $inputType = $this->innerType->serializedTypeHint($req);
+        if ($inputType) {
+            $inputType = "{$inputType} ";
+        }
+
+        return "array_map(fn({$inputType}\$item){$innerType} => {$this->innerType->inputMappingExpr($req, '$item', $validateExpr)}, $expr)";
     }
 
     function outputMappingExpr(GeneratorRequest $req, string $expr): string
