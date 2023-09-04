@@ -147,6 +147,19 @@ class ClientGenerator
         $getQueryMethod = new MethodGenerator(name: "getQuery", body: $getQueryBody);
         $getQueryMethod->setReturnType("array");
 
+        $getHeadersMethod = new MethodGenerator(name: "getHeaders", body: "return \$this->headers;\n");
+        $getHeadersMethod->setReturnType("array");
+
+        $withHeaderMethod = new MethodGenerator(
+            name: "withHeader",
+            parameters: [
+                new ParameterGenerator(name: "name", type: TypeGenerator::fromTypeString("string")),
+                new ParameterGenerator(name: "value", type: TypeGenerator::fromTypeString("string|array")),
+            ],
+            body: "\$clone = clone \$this;\n\$clone->headers[\$name] = \$value;\nreturn \$clone;",
+        );
+        $withHeaderMethod->setReturnType("self");
+
         $bodySchema = $operationData["requestBody"]["content"]["application/json"]["schema"] ?? null;
         if ($bodySchema !== null) {
             $paramClassSchema["properties"]["body"] = $bodySchema;
@@ -154,11 +167,16 @@ class ClientGenerator
         }
 
         $methodProperty = new PropertyGenerator(name: "method", defaultValue: $httpMethod, flags: PropertyGenerator::FLAG_PUBLIC | PropertyGenerator::FLAG_CONSTANT);
+        $headerProperty = new PropertyGenerator(name: "headers", defaultValue: [], flags: PropertyGenerator::FLAG_PRIVATE);
+        $headerProperty->setType(TypeGenerator::fromTypeString("array"));
 
         $req = new GeneratorRequest($paramClassSchema, new ValidatedSpecificationFilesItem($paramClassNamespace, $paramClassName, $outputDir), $this->generatorOpts);
         $req = $req->withAdditionalProperty($methodProperty);
+        $req = $req->withAdditionalProperty($headerProperty);
         $req = $req->withAdditionalMethod($getUrlMethod);
         $req = $req->withAdditionalMethod($getQueryMethod);
+        $req = $req->withAdditionalMethod($getHeadersMethod);
+        $req = $req->withAdditionalMethod($withHeaderMethod);
         $req = $req->withReferenceLookup($this->referenceLookup);
 
         $this->classBuilder->schemaToClass($req);
@@ -183,6 +201,7 @@ class ClientGenerator
         $bodySchema = $operationData["requestBody"]["content"]["application/json"]["schema"] ?? null;
         $body .= "\$httpResponse = \$this->client->send(\$httpRequest, [\n";
         $body .= "    'query' => \$request->getQuery(),\n";
+        $body .= "    'headers' => \$request->getHeaders(),\n";
 
         if ($bodySchema !== null) {
             if (isset($bodySchema["type"]) && $bodySchema["type"] === "array") {
