@@ -181,8 +181,8 @@ class ClientGenerator
             }
 
             if (!isset($response["content"])) {
-                $responseTypes[] = "null";
-                $responseMatchBuilder->addArm($statusCode, "null");
+                $responseTypes[] = "\\Mittwald\\ApiClient\\Client\\EmptyResponse";
+                $responseMatchBuilder->addArm($statusCode, "new \\Mittwald\\ApiClient\\Client\\EmptyResponse(\$httpResponse)");
                 continue;
             }
 
@@ -229,8 +229,8 @@ class ClientGenerator
             }
 
             if (!NestedObjectProperty::canHandleSchema($responseSchema)) {
-                $responseTypes[] = "mixed";
-                $responseMatchBuilder->addArm($statusCode, "json_decode(\$httpResponse->getBody(), true)");
+                $responseTypes[] = "\\Mittwald\\ApiClient\\Client\\UntypedResponse";
+                $responseMatchBuilder->addArm($statusCode, "new \\Mittwald\\ApiClient\\Client\\UntypedResponse(json_decode(\$httpResponse->getBody(), true), \$httpResponse)");
                 continue;
             }
 
