@@ -2,11 +2,11 @@
 
 namespace Mittwald\ApiToolsPHP\Generator;
 
-use Helmich\Schema2Class\Generator\SchemaToClass;
-use Helmich\Schema2Class\Generator\SchemaToClassFactory;
 use Helmich\Schema2Class\Writer\FileWriter;
 use Helmich\Schema2Class\Writer\WriterInterface;
 use Laminas\Code\Generator\ClassGenerator;
+use Laminas\Code\Generator\DocBlock\Tag\GenericTag;
+use Laminas\Code\Generator\DocBlockGenerator;
 use Laminas\Code\Generator\FileGenerator;
 use Laminas\Code\Generator\MethodGenerator;
 use Symfony\Component\Console\Output\ConsoleOutput;
@@ -14,24 +14,26 @@ use Symfony\Component\Console\Output\ConsoleOutput;
 class ClientFactoryGenerator
 {
     private WriterInterface $writer;
-    private SchemaToClass $classBuilder;
 
-    public function __construct(private readonly Context $context, private SchemaToClassFactory $s2c)
+    public function __construct(private readonly Context $context)
     {
-        $output = new ConsoleOutput();
-
-        $this->writer       = new FileWriter($output);
-        $this->classBuilder = $this->s2c->build($this->writer, $output);
+        $output       = new ConsoleOutput();
+        $this->writer = new FileWriter($output);
     }
 
     public function generate(string $namespace, array $clients): void
     {
         $clsName = "Client";
-        $cls = new ClassGenerator(
+        $cls     = new ClassGenerator(
             name: $clsName,
             namespaceName: $namespace,
             extends: "Mittwald\\ApiClient\\Client\\BaseClient",
         );
+
+        $cls->setDocBlock(new DocBlockGenerator(
+            "Auto-generated factory for mittwald mStudio v{$this->context->version} clients.",
+            tags: [new GenericTag(name: "internal")],
+        ));
 
         foreach ($clients as [$clientName, $clientNamespace]) {
             $method = new MethodGenerator(name: lcfirst($clientName));
@@ -45,7 +47,7 @@ class ClientFactoryGenerator
         $file->setClass($cls);
         $file->setNamespace($namespace);
 
-        $outputDir = GeneratorUtil::outputDirForClass($this->context, $namespace . "\\" . $clsName);
+        $outputDir  = GeneratorUtil::outputDirForClass($this->context, $namespace . "\\" . $clsName);
         $outputFile = $outputDir . "/" . $clsName . ".php";
 
         $this->writer->writeFile($outputFile, $file->generate());

@@ -39,7 +39,7 @@ class GenerateCommand extends Command
             $generatorContext,
             new ComponentGenerator($generatorContext, $schemaFactory),
             new ClientGenerator($generatorContext, $generatorOpts, $schemaFactory),
-            new ClientFactoryGenerator($generatorContext, $schemaFactory),
+            new ClientFactoryGenerator($generatorContext),
         );
         $generator->generateComponents();
         $generator->generateClients();

@@ -13,6 +13,20 @@ class SchemaReferenceLookup implements ReferenceLookup
     {
     }
 
+    private static function isUnionOfReferences(array $schema): bool {
+        if (!isset($schema["oneOf"])) {
+            return false;
+        }
+
+        foreach ($schema["oneOf"] as $oneOf) {
+            if (!isset($oneOf['$ref'])) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public function lookupReference(string $reference): ReferencedType
     {
         [, , $componentType, $name] = explode("/", $reference);
@@ -28,6 +42,7 @@ class SchemaReferenceLookup implements ReferenceLookup
         return match (true) {
             isset($schema["enum"]) => new ReferencedTypeEnum($fqcn),
             isset($schema["items"]["\$ref"]) => new ReferencedTypeList($this->lookupReference($schema["items"]["\$ref"])),
+            static::isUnionOfReferences($schema) => new ReferencedUnion(array_map(fn(array $schema) => $this->lookupReference($schema['$ref']), $schema["oneOf"])),
             default => new ReferencedTypeClass($fqcn),
         };
     }
