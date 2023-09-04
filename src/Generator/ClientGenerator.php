@@ -26,7 +26,11 @@ class ClientGenerator
     private WriterInterface $writer;
     private SchemaReferenceLookup $referenceLookup;
 
-    public function __construct(private readonly Context $context, SchemaToClassFactory $s2c = new SchemaToClassFactory())
+    public function __construct(
+        private readonly Context              $context,
+        private readonly SpecificationOptions $generatorOpts,
+        SchemaToClassFactory                  $s2c = new SchemaToClassFactory(),
+    )
     {
         $output                = new ConsoleOutput();
         $this->writer          = new FileWriter($output);
@@ -87,20 +91,11 @@ class ClientGenerator
         return $methods;
     }
 
-    private function buildOperationMethod(string $namespace, string $tag, string $path, string $httpMethod, array $operationData): MethodGenerator
+    private function buildOperationRequestClass(string $namespace, string $methodName, string $httpMethod, string $path, array $operationData): string
     {
-        $operationId = $operationData["operationId"];
-        $methodName  = $this->mapOperationId($tag, $operationId);
-
-        $httpMethod    = strtoupper($httpMethod);
-        $generatorOpts = (new SpecificationOptions())
-            ->withTargetPHPVersion("8.2");
-
         $pathParameters = array_filter($operationData["parameters"] ?? [], fn(array $in): bool => $in["in"] === "path");
 
         $url = var_export($path, true);
-
-        $body = "";
 
         $paramClassName      = ucfirst($methodName) . "Request";
         $paramClassNamespace = $namespace . "\\" . ucfirst($methodName);
@@ -129,32 +124,43 @@ class ClientGenerator
             $url = str_replace(" . ''", "", $url);
         }
 
+        $getUrlBody   .= "return {$url};\n";
+        $getUrlMethod = new MethodGenerator(name: "getUrl", body: $getUrlBody);
+        $getUrlMethod->setReturnType("string");
+
         $bodySchema = $operationData["requestBody"]["content"]["application/json"]["schema"] ?? null;
         if ($bodySchema !== null) {
             $paramClassSchema["properties"]["body"] = $bodySchema;
             $paramClassSchema["required"][]         = "body";
         }
 
-        $getUrlBody   .= "return {$url};\n";
-        $getUrlMethod = new MethodGenerator(name: "getUrl", body: $getUrlBody);
-        $getUrlMethod->setReturnType("string");
+        $methodProperty = new PropertyGenerator(name: "method", defaultValue: $httpMethod, flags: PropertyGenerator::FLAG_PUBLIC | PropertyGenerator::FLAG_CONSTANT);
 
-        $parameterGenerators = [
-            new ParameterGenerator(
-                name: "request",
-                type: $paramClassNameFQ,
-            ),
-        ];
-
-        $req = new GeneratorRequest($paramClassSchema, new ValidatedSpecificationFilesItem($paramClassNamespace, $paramClassName, $outputDir), $generatorOpts);
-        $req = $req->withAdditionalProperty(new PropertyGenerator(name: "method", defaultValue: $httpMethod, flags: PropertyGenerator::FLAG_PUBLIC | PropertyGenerator::FLAG_CONSTANT));
+        $req = new GeneratorRequest($paramClassSchema, new ValidatedSpecificationFilesItem($paramClassNamespace, $paramClassName, $outputDir), $this->generatorOpts);
+        $req = $req->withAdditionalProperty($methodProperty);
         $req = $req->withAdditionalMethod($getUrlMethod);
         $req = $req->withReferenceLookup($this->referenceLookup);
 
         $this->classBuilder->schemaToClass($req);
+        return $paramClassNameFQ;
+    }
 
-        $body .= "\$httpRequest = new Request(\\" . $paramClassNameFQ . "::method, \$request->getUrl());\n";
+    private function buildOperationMethod(string $namespace, string $tag, string $path, string $httpMethod, array $operationData): MethodGenerator
+    {
+        $operationId = $operationData["operationId"];
+        $methodName  = $this->mapOperationId($tag, $operationId);
 
+        $parameterClass      = $this->buildOperationRequestClass($namespace, $methodName, $httpMethod, $path, $operationData);
+        $parameterGenerators = [
+            new ParameterGenerator(
+                name: "request",
+                type: $parameterClass,
+            ),
+        ];
+
+        $body = "\$httpRequest = new Request(\\" . $parameterClass . "::method, \$request->getUrl());\n";
+
+        $bodySchema = $operationData["requestBody"]["content"]["application/json"]["schema"] ?? null;
         if ($bodySchema !== null) {
             if (isset($bodySchema["type"]) && $bodySchema["type"] === "array") {
                 $body .= "\$httpResponse = \$this->client->send(\$httpRequest, ['json' => \$request->toJson()['body']]);\n";
@@ -193,13 +199,13 @@ class ClientGenerator
             $responseClassNameFQ    = $responseClassNamespace . "\\" . $responseClassName;
             $outputDir              = GeneratorUtil::outputDirForClass($this->context, $responseClassNameFQ);
 
-            $req = new GeneratorRequest($responseSchema, new ValidatedSpecificationFilesItem($responseClassNamespace, $responseClassName, $outputDir), $generatorOpts);
+            $req = new GeneratorRequest($responseSchema, new ValidatedSpecificationFilesItem($responseClassNamespace, $responseClassName, $outputDir), $this->generatorOpts);
             $req = $req->withReferenceLookup($this->referenceLookup);
 
             if (ReferenceProperty::canHandleSchema($responseSchema)) {
                 $ref             = $this->referenceLookup->lookupReference($responseSchema['$ref']);
                 $responseTypes[] = $ref->typeHint($req);
-                $responseMatchBuilder->addArm($statusCode, $ref->inputMappingExpr($req, 'json_decode($httpResponse->getBody(), true)'));
+                $responseMatchBuilder->addArm($statusCode, $ref->inputMappingExpr($req, expr: 'json_decode($httpResponse->getBody(), true)', validateExpr: 'false'));
                 continue;
             }
 
@@ -212,7 +218,7 @@ class ClientGenerator
                     ],
                 ];
 
-                $req = new GeneratorRequest($newResponseSchema, new ValidatedSpecificationFilesItem($responseClassNamespace, $responseClassName, $outputDir), $generatorOpts);
+                $req = new GeneratorRequest($newResponseSchema, new ValidatedSpecificationFilesItem($responseClassNamespace, $responseClassName, $outputDir), $this->generatorOpts);
                 $req = $req->withReferenceLookup($this->referenceLookup);
 
                 $this->classBuilder->schemaToClass($req);

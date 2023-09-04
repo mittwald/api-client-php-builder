@@ -3,6 +3,7 @@
 namespace Mittwald\ApiToolsPHP\Command;
 
 use Helmich\Schema2Class\Generator\SchemaToClassFactory;
+use Helmich\Schema2Class\Spec\SpecificationOptions;
 use Mittwald\ApiToolsPHP\Generator\ClientFactoryGenerator;
 use Mittwald\ApiToolsPHP\Generator\ClientGenerator;
 use Mittwald\ApiToolsPHP\Generator\ComponentGenerator;
@@ -32,11 +33,12 @@ class GenerateCommand extends Command
         $schema        = json_decode(file_get_contents($schemaURL), associative: true);
         $schemaFactory = new SchemaToClassFactory();
 
+        $generatorOpts    = (new SpecificationOptions())->withTargetPHPVersion('8.2');
         $generatorContext = new Context($outputPath, $schema);
         $generator        = new Generator(
             $generatorContext,
             new ComponentGenerator($generatorContext, $schemaFactory),
-            new ClientGenerator($generatorContext, $schemaFactory),
+            new ClientGenerator($generatorContext, $generatorOpts, $schemaFactory),
             new ClientFactoryGenerator($generatorContext, $schemaFactory),
         );
         $generator->generateComponents();

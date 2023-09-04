@@ -43,13 +43,13 @@ class ReferencedTypeList implements ReferencedType
         return "array_reduce($map, fn(\$carry, \$item): bool => \$carry && \$item, true)";
     }
 
-    function inputMappingExpr(GeneratorRequest $req, string $expr): string
+    function inputMappingExpr(GeneratorRequest $req, string $expr, ?string $validateExpr): string
     {
         $innerType = $this->innerType->typeHint($req);
         if ($innerType) {
-            return "array_map(fn(\$item): {$innerType} => {$this->innerType->inputMappingExpr($req, '$item')}, $expr)";
+            return "array_map(fn(\$item): {$innerType} => {$this->innerType->inputMappingExpr($req, '$item', $validateExpr)}, $expr)";
         }
-        return "array_map(fn(\$item) => {$this->innerType->inputMappingExpr($req, '$item')}, $expr)";
+        return "array_map(fn(\$item) => {$this->innerType->inputMappingExpr($req, '$item', $validateExpr)}, $expr)";
     }
 
     function outputMappingExpr(GeneratorRequest $req, string $expr): string

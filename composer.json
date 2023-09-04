@@ -16,7 +16,7 @@
   ],
   "require": {
     "symfony/console": "^6.3",
-    "helmich/schema2class": "dev-feature-skip-validation"
+    "helmich/schema2class": "dev-validate-expr"
   },
   "minimum-stability": "dev",
   "prefer-stable": true
