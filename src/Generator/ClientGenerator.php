@@ -229,8 +229,8 @@ class ClientGenerator
             }
 
             if (!isset($response["content"]["application/json"]["schema"])) {
-                $responseTypes[] = "string";
-                $responseMatchBuilder->addArm($statusCode, "\$httpResponse->getBody()");
+                $responseTypes[] = "\\Mittwald\\ApiClient\\Client\\StringResponse";
+                $responseMatchBuilder->addArm($statusCode, "\\Mittwald\\ApiClient\\Client\\StringResponse::fromResponse(\$httpResponse)");
                 continue;
             }
 
