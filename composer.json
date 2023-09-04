@@ -16,7 +16,7 @@
   ],
   "require": {
     "symfony/console": "^6.3",
-    "helmich/schema2class": "dev-union-type-annotation"
+    "helmich/schema2class": "dev-docblock-no-wrap"
   },
   "minimum-stability": "dev",
   "prefer-stable": true
