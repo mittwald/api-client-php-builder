@@ -16,7 +16,7 @@
   ],
   "require": {
     "symfony/console": "^6.3",
-    "helmich/schema2class": "dev-docblock-no-wrap"
+    "helmich/schema2class": "dev-bugfix-psalm-issues"
   },
   "minimum-stability": "dev",
   "prefer-stable": true
