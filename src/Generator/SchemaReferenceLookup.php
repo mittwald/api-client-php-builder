@@ -42,6 +42,7 @@ class SchemaReferenceLookup implements ReferenceLookup
         return match (true) {
             isset($schema["enum"]) => new ReferencedTypeEnum($fqcn),
             isset($schema["items"]["\$ref"]) => new ReferencedTypeList($this->lookupReference($schema["items"]["\$ref"])),
+            isset($schema["type"]) && $schema["type"] === "string" => new ReferencedString(),
             static::isUnionOfReferences($schema) => new ReferencedUnion(array_map(fn(array $schema) => $this->lookupReference($schema['$ref']), $schema["oneOf"])),
             default => new ReferencedTypeClass($fqcn),
         };
