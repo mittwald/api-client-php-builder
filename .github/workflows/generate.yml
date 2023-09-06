@@ -43,6 +43,7 @@ jobs:
           
           composer install --prefer-dist --no-progress --no-suggest
           vendor/bin/psalm
+          composer run format
           
           git config --global user.name "mittwald-machine"
           git config --global user.email "opensource@mittwald.de"
