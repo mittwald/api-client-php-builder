@@ -53,6 +53,6 @@ jobs:
           new_tag=$(php ../cmd/generate.php version "${last_tag}")
           
           git tag -m "Release ${new_tag}" ${new_tag}
-          git remote add publish "https://mittwald-macine:${{ secrets.MACHINE_USER_TOKEN }}@$github.com/mittwald/api-client-php.git"
+          git remote add publish "https://mittwald-macine:${{ secrets.MACHINE_USER_TOKEN }}@github.com/mittwald/api-client-php.git"
           git push publish
           git push --tags publish
