@@ -23,6 +23,7 @@ jobs:
           repository: 'mittwald/api-client-php'
           path: '.work'
           token: ${{ secrets.MACHINE_USER_TOKEN }}
+          fetch-tags: true
 
       - name: Generate client
         run: php ./cmd/generate.php generate https://api.mittwald.de/openapi ./.work -v
