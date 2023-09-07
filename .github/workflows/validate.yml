@@ -1,0 +1,41 @@
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+jobs:
+  generate:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-suggest
+
+      - name: Checkout client to subdirectory
+        uses: actions/checkout@v3
+        with:
+          repository: 'mittwald/api-client-php'
+          path: '.work'
+          token: ${{ secrets.MACHINE_USER_TOKEN }}
+          fetch-tags: true
+
+      - name: Generate client
+        run: php ./cmd/generate.php generate https://api.mittwald.de/openapi ./.work -v
+
+      - run: git status
+        working-directory: .work
+
+      - name: Validate generated code
+        working-directory: .work
+        run: |
+          set -ex
+          
+          composer install --prefer-dist --no-progress --no-suggest
+          vendor/bin/psalm

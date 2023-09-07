@@ -1,5 +1,5 @@
 {
-  "name": "mittwald/api-tools-php",
+  "name": "mittwald/api-client-builder",
   "description": "Toolset for building a PHP client for the mittwald mStudio API",
   "type": "project",
   "license": "MIT",
@@ -16,7 +16,7 @@
   ],
   "require": {
     "symfony/console": "^6.3",
-    "helmich/schema2class": "^3.0"
+    "helmich/schema2class": "dev-feature-hooks"
   },
   "minimum-stability": "dev",
   "prefer-stable": true

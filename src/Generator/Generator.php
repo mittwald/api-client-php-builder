@@ -33,7 +33,7 @@ class Generator
             $clientNamespace = ucfirst(preg_replace("/[^a-zA-Z0-9]/", "", $tag["name"]));
             $baseNamespace   = "Mittwald\\ApiClient\\Generated\\V{$this->context->version}\\Clients\\{$clientNamespace}";
 
-            $this->clientGenerator->generate($baseNamespace, $tag["name"]);
+            $this->clientGenerator->generate($baseNamespace, $tag);
 
             $clients[] = [$clientNamespace, $baseNamespace];
         }
