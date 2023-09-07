@@ -24,6 +24,7 @@ jobs:
           path: '.work'
           token: ${{ secrets.MACHINE_USER_TOKEN }}
           fetch-tags: true
+          fetch-depth: "0"
 
       - name: Generate client
         run: php ./cmd/generate.php generate https://api.mittwald.de/openapi ./.work -v
