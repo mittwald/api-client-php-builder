@@ -15,6 +15,11 @@ use Helmich\Schema2Class\Spec\ValidatedSpecificationFilesItem;
 use Helmich\Schema2Class\Writer\FileWriter;
 use Helmich\Schema2Class\Writer\WriterInterface;
 use Laminas\Code\Generator\ClassGenerator;
+use Laminas\Code\Generator\DocBlock\Tag\GenericTag;
+use Laminas\Code\Generator\DocBlock\Tag\ParamTag;
+use Laminas\Code\Generator\DocBlock\Tag\ReturnTag;
+use Laminas\Code\Generator\DocBlock\Tag\ThrowsTag;
+use Laminas\Code\Generator\DocBlockGenerator;
 use Laminas\Code\Generator\FileGenerator;
 use Laminas\Code\Generator\MethodGenerator;
 use Laminas\Code\Generator\ParameterGenerator;
@@ -40,12 +45,15 @@ class ClientGenerator
         $this->referenceLookup = new SchemaReferenceLookup($this->context);
     }
 
-    public function generate(string $baseNamespace, string $tag): void
+    /**
+     * @param array{description: string, name: string} $tag
+     */
+    public function generate(string $baseNamespace, array $tag): void
     {
-        $clsName = ucfirst(preg_replace("/[^a-zA-Z0-9]/", "", $tag)) . "Client";
+        $clsName = ucfirst(preg_replace("/[^a-zA-Z0-9]/", "", $tag["name"])) . "Client";
 
-        $operations       = $this->collectOperations($tag);
-        $operationMethods = $this->buildOperationMethods($baseNamespace, $tag, $operations);
+        $operations       = $this->collectOperations($tag["name"]);
+        $operationMethods = $this->buildOperationMethods($baseNamespace, $tag["name"], $operations);
 
         $constructor = new MethodGenerator(
             name: "__construct",
@@ -60,7 +68,16 @@ class ClientGenerator
 
         $props = [$clientProp];
 
-        $cls = new ClassGenerator($clsName, $baseNamespace, properties: $props, methods: [$constructor, ...$operationMethods]);
+        $clsComment = new DocBlockGenerator(
+            shortDescription: "Client for {$tag["name"]} API",
+            longDescription: $tag["description"] . "\n\n" . CommentUtils::AutoGenerationNotice,
+            tags: [
+                new GenericTag("generated"),
+                new GenericTag("see", CommentUtils::AutoGeneratorURL),
+            ],
+        );
+        $cls        = new ClassGenerator($clsName, $baseNamespace, properties: $props, methods: [$constructor, ...$operationMethods]);
+        $cls->setDocBlock($clsComment);
 
         $file = new FileGenerator();
         $file->setClass($cls);
@@ -95,7 +112,7 @@ class ClientGenerator
 
     private function buildOperationRequestClass(string $namespace, string $methodName, string $httpMethod, string $path, array $operationData): string
     {
-        $pathParameters = array_filter($operationData["parameters"] ?? [], fn(array $in): bool => $in["in"] === "path");
+        $pathParameters  = array_filter($operationData["parameters"] ?? [], fn(array $in): bool => $in["in"] === "path");
         $queryParameters = array_filter($operationData["parameters"] ?? [], fn(array $in): bool => $in["in"] === "query");
 
         $url = var_export($path, true);
@@ -111,7 +128,7 @@ class ClientGenerator
             "required"   => [],
         ];
 
-        $getUrlBody = "\$mapped = \$this->toJson();\n";
+        $getUrlBody   = "\$mapped = \$this->toJson();\n";
         $getQueryBody = "\$mapped = \$this->toJson();\n\$query = [];\n";
 
         foreach ($pathParameters as $param) {
@@ -143,7 +160,7 @@ class ClientGenerator
         $getUrlMethod = new MethodGenerator(name: "getUrl", body: $getUrlBody);
         $getUrlMethod->setReturnType("string");
 
-        $getQueryBody .= "return \$query;\n";
+        $getQueryBody   .= "return \$query;\n";
         $getQueryMethod = new MethodGenerator(name: "getQuery", body: $getQueryBody);
         $getQueryMethod->setReturnType("array");
 
@@ -199,9 +216,9 @@ class ClientGenerator
         $body = "\$httpRequest = new Request(\\" . $parameterClass . "::method, \$request->getUrl());\n";
 
         $bodySchema = $operationData["requestBody"]["content"]["application/json"]["schema"] ?? null;
-        $body .= "\$httpResponse = \$this->client->send(\$httpRequest, [\n";
-        $body .= "    'query' => \$request->getQuery(),\n";
-        $body .= "    'headers' => \$request->getHeaders(),\n";
+        $body       .= "\$httpResponse = \$this->client->send(\$httpRequest, [\n";
+        $body       .= "    'query' => \$request->getQuery(),\n";
+        $body       .= "    'headers' => \$request->getHeaders(),\n";
 
         if ($bodySchema !== null) {
             if (isset($bodySchema["type"]) && $bodySchema["type"] === "array") {
@@ -217,9 +234,16 @@ class ClientGenerator
         $responses            = $operationData["responses"] ?? [];
         $responseTypes        = [];
 
+        /** @var string|null $responseComment */
+        $responseComment = null;
+
         foreach ($responses as $statusCode => $response) {
             if (isset($response['$ref'])) {
                 $response = $this->context->schema["components"]["responses"][str_replace("#/components/responses/", "", $response['$ref'])];
+            }
+
+            if ($statusCode >= 200 && $statusCode < 300) {
+                $responseComment = $response["description"] ?? null;
             }
 
             if (!isset($response["content"])) {
@@ -280,7 +304,7 @@ class ClientGenerator
 
             $this->classBuilder->schemaToClass($req);
 
-            $responseTypes[] = $responseClassNameFQ;
+            $responseTypes[] = '\\' . $responseClassNameFQ;
             $responseMatchBuilder->addArm($statusCode, "\\{$responseClassNameFQ}::fromResponse(\$httpResponse)");
         }
 
@@ -291,10 +315,26 @@ class ClientGenerator
             $responseTypes = ["mixed"];
         }
 
+        $docComment = new DocBlockGenerator();
+        $docComment->setShortDescription($operationData["summary"] ?? "Invoke the `{$operationId}` operation");
+        $docComment->setTag(new GenericTag("see", CommentUtils::generateOperationLink($tag, $operationId)));
+        $docComment->setTag(new ThrowsTag("\\GuzzleHttp\\Exception\\GuzzleException"));
+        $docComment->setTag(new ParamTag("request", '\\' . $parameterClass, "An object representing the request for this operation"));
+        $docComment->setWordWrap(false);
+
+        if (isset($operationData["description"])) {
+            $docComment->setLongDescription($operationData["description"]);
+        }
+
+        if ($responseComment !== null) {
+            $docComment->setTag(new ReturnTag(implode("|", $responseTypes), $responseComment));
+        }
+
         $method = new MethodGenerator(name: $methodName);
         $method->setBody($body);
         $method->setParameters($parameterGenerators);
         $method->setReturnType(implode("|", $responseTypes));
+        $method->setDocBlock($docComment);
 
         return $method;
     }

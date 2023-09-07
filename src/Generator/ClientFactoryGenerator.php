@@ -31,8 +31,8 @@ class ClientFactoryGenerator
         );
 
         $cls->setDocBlock(new DocBlockGenerator(
-            "Auto-generated factory for mittwald mStudio v{$this->context->version} clients.",
-            tags: [new GenericTag(name: "internal")],
+            shortDescription: "Auto-generated factory for mittwald mStudio v{$this->context->version} clients.",
+            longDescription: CommentUtils::AutoGenerationNotice,
         ));
 
         foreach ($clients as [$clientName, $clientNamespace]) {

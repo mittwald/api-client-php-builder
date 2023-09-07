@@ -2,6 +2,8 @@
 namespace Mittwald\ApiToolsPHP\Generator;
 
 use Helmich\Schema2Class\Generator\GeneratorRequest;
+use Helmich\Schema2Class\Generator\Hook\ClassCreatedHook;
+use Helmich\Schema2Class\Generator\Hook\EnumCreatedHook;
 use Helmich\Schema2Class\Generator\ReferencedType;
 use Helmich\Schema2Class\Generator\ReferencedTypeClass;
 use Helmich\Schema2Class\Generator\ReferencedTypeEnum;
@@ -13,8 +15,15 @@ use Helmich\Schema2Class\Spec\SpecificationOptions;
 use Helmich\Schema2Class\Spec\ValidatedSpecificationFilesItem;
 use Helmich\Schema2Class\Writer\DebugWriter;
 use Helmich\Schema2Class\Writer\FileWriter;
+use Laminas\Code\Generator\ClassGenerator;
+use Laminas\Code\Generator\DocBlock\Tag\GenericTag;
+use Laminas\Code\Generator\DocBlockGenerator;
+use Laminas\Code\Generator\EnumGenerator\EnumGenerator;
 use Symfony\Component\Console\Output\ConsoleOutput;
 
+/**
+ * @generated
+ */
 class ComponentGenerator
 {
     private Context $context;
@@ -63,8 +72,24 @@ class ComponentGenerator
 
         $spec = new ValidatedSpecificationFilesItem($namespace, $classNameWithoutNamespace, $outputDir);
         $opts = (new SpecificationOptions())->withTargetPHPVersion("8.2");
+
         $request = new GeneratorRequest($component, $spec, $opts);
         $request = $request->withReferenceLookup(new SchemaReferenceLookup($this->context));
+        $request = $request->withHook(new class($component, $componentName) implements ClassCreatedHook {
+            function __construct(private readonly array $component, private readonly string $componentName) {}
+
+            function onClassCreated(string $className, ClassGenerator $class): void
+            {
+                $docBlock = $class->getDocBlock() ?? new DocBlockGenerator();
+                $docBlock->setShortDescription($this->component["description"] ?? "Auto-generated class for {$this->componentName}.");
+                $docBlock->setLongDescription(CommentUtils::AutoGenerationNotice);
+                $docBlock->setTag(new GenericTag("generated"));
+                $docBlock->setTag(new GenericTag("see", CommentUtils::AutoGeneratorURL));
+
+                $class->setDocBlock($docBlock);
+            }
+        });
+
         $output = new ConsoleOutput();
         $writer = new FileWriter($output);
 
