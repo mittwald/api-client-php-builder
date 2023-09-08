@@ -16,7 +16,7 @@
   ],
   "require": {
     "symfony/console": "^6.3",
-    "helmich/schema2class": "dev-feature-hooks"
+    "helmich/schema2class": "^3.0.1"
   },
   "minimum-stability": "dev",
   "prefer-stable": true

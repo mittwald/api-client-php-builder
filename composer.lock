@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "0c3d40f8942d06b2efe4733adaa741eb",
+    "content-hash": "229159376c656e0e7f1d036e7070978b",
     "packages": [
         {
             "name": "composer/semver",
@@ -89,23 +89,23 @@
         },
         {
             "name": "helmich/schema2class",
-            "version": "dev-feature-hooks",
+            "version": "v3.0.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/martin-helmich/php-schema2class.git",
-                "reference": "390a769efaa9532a7ccfa19474cc44dd8fc6260c"
+                "reference": "72991b252ba2e35a029cee6d8b1dd8436a5f1df4"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/martin-helmich/php-schema2class/zipball/390a769efaa9532a7ccfa19474cc44dd8fc6260c",
-                "reference": "390a769efaa9532a7ccfa19474cc44dd8fc6260c",
+                "url": "https://api.github.com/repos/martin-helmich/php-schema2class/zipball/72991b252ba2e35a029cee6d8b1dd8436a5f1df4",
+                "reference": "72991b252ba2e35a029cee6d8b1dd8436a5f1df4",
                 "shasum": ""
             },
             "require": {
                 "composer/semver": "^3.0",
                 "ext-json": "*",
                 "justinrainbow/json-schema": "^5.2",
-                "laminas/laminas-code": "^4.2",
+                "laminas/laminas-code": "^4.12",
                 "php": "^8.2",
                 "symfony/console": "~3.0|~4.0|~5.0|~6.0",
                 "symfony/yaml": "~3.0|~4.0|~5.0|~6.0"
@@ -138,7 +138,7 @@
             "description": "Build PHP classes from JSON schema definitions",
             "support": {
                 "issues": "https://github.com/martin-helmich/php-schema2class/issues",
-                "source": "https://github.com/martin-helmich/php-schema2class/tree/feature-hooks"
+                "source": "https://github.com/martin-helmich/php-schema2class/tree/v3.0.1"
             },
             "funding": [
                 {
@@ -150,7 +150,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2023-09-07T05:59:31+00:00"
+            "time": "2023-09-08T14:10:11+00:00"
         },
         {
             "name": "justinrainbow/json-schema",
@@ -1069,9 +1069,7 @@
     "packages-dev": [],
     "aliases": [],
     "minimum-stability": "dev",
-    "stability-flags": {
-        "helmich/schema2class": 20
-    },
+    "stability-flags": [],
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": [],

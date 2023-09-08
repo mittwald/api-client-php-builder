@@ -30,6 +30,11 @@ class ReferencedTypeList implements ReferencedType
         return "array";
     }
 
+    function serializedInputTypeHint(GeneratorRequest $req): ?string
+    {
+        return "array";
+    }
+
     function serializedTypeHint(GeneratorRequest $req): ?string
     {
         return "array";

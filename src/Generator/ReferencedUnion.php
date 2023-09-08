@@ -29,6 +29,14 @@ class ReferencedUnion implements ReferencedType
         return implode("|", array_map(fn(ReferencedType $type): string => $type->typeHint($req), $this->innerTypes));
     }
 
+    public function serializedInputTypeHint(GeneratorRequest $req): ?string
+    {
+        $types = array_map(fn(ReferencedType $type): string => $type->serializedInputTypeHint($req), $this->innerTypes);
+        $types = array_unique(array_filter($types));
+
+        return implode("|", $types);
+    }
+
     public function serializedTypeHint(GeneratorRequest $req): ?string
     {
         $types = array_map(fn(ReferencedType $type): string => $type->serializedTypeHint($req), $this->innerTypes);

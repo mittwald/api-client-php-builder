@@ -22,6 +22,11 @@ class ReferencedString implements ReferencedType
         return "string";
     }
 
+    function serializedInputTypeHint(GeneratorRequest $req): ?string
+    {
+        return "string";
+    }
+
     function serializedTypeHint(GeneratorRequest $req): ?string
     {
         return "string";
