@@ -71,7 +71,9 @@ class ComponentGenerator
         $outputDir = GeneratorUtil::outputDirForClass($this->context, $className);
 
         $spec = new ValidatedSpecificationFilesItem($namespace, $classNameWithoutNamespace, $outputDir);
-        $opts = (new SpecificationOptions())->withTargetPHPVersion("8.2");
+        $opts = (new SpecificationOptions())
+            ->withTargetPHPVersion("8.2")
+            ->withTreatValuesWithDefaultAsOptional(true);
 
         $request = new GeneratorRequest($component, $spec, $opts);
         $request = $request->withReferenceLookup(new SchemaReferenceLookup($this->context));

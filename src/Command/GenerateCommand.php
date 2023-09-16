@@ -33,7 +33,9 @@ class GenerateCommand extends Command
         $schema        = json_decode(file_get_contents($schemaURL), associative: true);
         $schemaFactory = new SchemaToClassFactory();
 
-        $generatorOpts    = (new SpecificationOptions())->withTargetPHPVersion('8.2');
+        $generatorOpts    = (new SpecificationOptions())
+            ->withTargetPHPVersion('8.2')
+            ->withTreatValuesWithDefaultAsOptional(true);
         $generatorContext = new Context($outputPath, $schema);
         $generator        = new Generator(
             $generatorContext,
