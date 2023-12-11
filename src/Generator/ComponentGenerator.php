@@ -45,8 +45,8 @@ class ComponentGenerator
 
     public function generate(string $baseNamespace, array $component, string $componentName): void
     {
-        // Special treatment for inlined enums
-        if (isset($component["items"]["enum"])) {
+        // Special treatment for inlined item types
+        if (isset($component["items"])) {
             $this->generate($baseNamespace, $component["items"], $componentName . "Item");
             return;
         }
@@ -60,7 +60,7 @@ class ComponentGenerator
             return;
         }
 
-        if (!isset($component["properties"]) && !(isset($component["enum"]))) {
+        if (!isset($component["properties"]) && !isset($component["enum"]) && !isset($component["allOf"])) {
             trigger_error("Component {$componentName} is not an object, skipping.", E_USER_WARNING);
             return;
         }
@@ -73,7 +73,8 @@ class ComponentGenerator
         $spec = new ValidatedSpecificationFilesItem($namespace, $classNameWithoutNamespace, $outputDir);
         $opts = (new SpecificationOptions())
             ->withTargetPHPVersion("8.2")
-            ->withTreatValuesWithDefaultAsOptional(true);
+            ->withTreatValuesWithDefaultAsOptional(true)
+            ->withInlineAllofReferences(true);
 
         $request = new GeneratorRequest($component, $spec, $opts);
         $request = $request->withReferenceLookup(new SchemaReferenceLookup($this->context));

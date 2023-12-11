@@ -21,6 +21,7 @@ use Laminas\Code\Generator\DocBlock\Tag\ReturnTag;
 use Laminas\Code\Generator\DocBlock\Tag\ThrowsTag;
 use Laminas\Code\Generator\DocBlockGenerator;
 use Laminas\Code\Generator\FileGenerator;
+use Laminas\Code\Generator\InterfaceGenerator;
 use Laminas\Code\Generator\MethodGenerator;
 use Laminas\Code\Generator\ParameterGenerator;
 use Laminas\Code\Generator\PropertyGenerator;
@@ -50,7 +51,8 @@ class ClientGenerator
      */
     public function generate(string $baseNamespace, array $tag): void
     {
-        $clsName = ucfirst(preg_replace("/[^a-zA-Z0-9]/", "", $tag["name"])) . "Client";
+        $ifaceName = ucfirst(preg_replace("/[^a-zA-Z0-9]/", "", $tag["name"])) . "Client";
+        $clsName = $ifaceName . "Impl";
 
         $operations       = $this->collectOperations($tag["name"]);
         $operationMethods = $this->buildOperationMethods($baseNamespace, $tag["name"], $operations);
@@ -76,25 +78,41 @@ class ClientGenerator
                 new GenericTag("see", CommentUtils::AutoGeneratorURL),
             ],
         );
-        $cls        = new ClassGenerator($clsName, $baseNamespace, properties: $props, methods: [$constructor, ...$operationMethods]);
+        $cls        = new ClassGenerator($clsName, $baseNamespace, properties: $props, methods: [$constructor, ...$operationMethods], interfaces: ["{$baseNamespace}\\{$ifaceName}"]);
         $cls->setDocBlock($clsComment);
 
-        $file = new FileGenerator();
-        $file->setClass($cls);
-        $file->setNamespace($baseNamespace);
-        $file->setUses([
+        $ifaceMethods = array_map(fn(MethodGenerator $m) => clone $m, $operationMethods);
+
+        $iface = new InterfaceGenerator($ifaceName, $baseNamespace, methods: $ifaceMethods);
+        $iface->setDocBlock($clsComment);
+
+        $clsFile = new FileGenerator();
+        $clsFile->setClass($cls);
+        $clsFile->setNamespace($baseNamespace);
+        $clsFile->setUses([
             'GuzzleHttp\\Psr7\\Request',
         ]);
 
+        $ifaceFile = new FileGenerator();
+        $ifaceFile->setClass($iface);
+        $ifaceFile->setNamespace($baseNamespace);
+
         $outputDir = GeneratorUtil::outputDirForClass($this->context, $baseNamespace . "\\" . $clsName);
 
-        $content = $file->generate();
+        $clsContent = self::sanitizeOutput($clsFile->generate(), $baseNamespace);
+        $ifaceContent = self::sanitizeOutput($ifaceFile->generate(), $baseNamespace);
 
+        $this->writer->writeFile("{$outputDir}/{$ifaceName}.php", $ifaceContent);
+        $this->writer->writeFile("{$outputDir}/{$clsName}.php", $clsContent);
+    }
+
+    private function sanitizeOutput(string $content, string $baseNamespace): string
+    {
         // Do some corrections because the Zend code generation library is stupid.
         $content = preg_replace('/ : \\\\self/', ' : self', $content);
         $content = preg_replace('/\\\\' . preg_quote($baseNamespace) . '\\\\/', '', $content);
 
-        $this->writer->writeFile("{$outputDir}/{$clsName}.php", $content);
+        return $content;
     }
 
     private function buildOperationMethods(string $namespace, string $tag, array $operations): array
