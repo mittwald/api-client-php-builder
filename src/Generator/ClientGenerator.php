@@ -26,6 +26,7 @@ use Laminas\Code\Generator\MethodGenerator;
 use Laminas\Code\Generator\ParameterGenerator;
 use Laminas\Code\Generator\PropertyGenerator;
 use Laminas\Code\Generator\TypeGenerator;
+use Mittwald\ApiToolsPHP\Utils\Strings\StatusTranslator;
 use Symfony\Component\Console\Output\ConsoleOutput;
 
 class ClientGenerator
@@ -52,7 +53,7 @@ class ClientGenerator
     public function generate(string $baseNamespace, array $tag): void
     {
         $ifaceName = ucfirst(preg_replace("/[^a-zA-Z0-9]/", "", $tag["name"])) . "Client";
-        $clsName = $ifaceName . "Impl";
+        $clsName   = $ifaceName . "Impl";
 
         $operations       = $this->collectOperations($tag["name"]);
         $operationMethods = $this->buildOperationMethods($baseNamespace, $tag["name"], $operations);
@@ -99,7 +100,7 @@ class ClientGenerator
 
         $outputDir = GeneratorUtil::outputDirForClass($this->context, $baseNamespace . "\\" . $clsName);
 
-        $clsContent = self::sanitizeOutput($clsFile->generate(), $baseNamespace);
+        $clsContent   = self::sanitizeOutput($clsFile->generate(), $baseNamespace);
         $ifaceContent = self::sanitizeOutput($ifaceFile->generate(), $baseNamespace);
 
         $this->writer->writeFile("{$outputDir}/{$ifaceName}.php", $ifaceContent);
@@ -250,35 +251,40 @@ class ClientGenerator
 
         $responseMatchBuilder = new MatchGenerator("\$httpResponse->getStatusCode()");
         $responses            = $operationData["responses"] ?? [];
-        $responseTypes        = [];
 
-        /** @var string|null $responseComment */
-        $responseComment = null;
+        /** @var OperationResponse[] $responseTypes */
+        $responseTypes = [];
 
         foreach ($responses as $statusCode => $response) {
             if (isset($response['$ref'])) {
                 $response = $this->context->schema["components"]["responses"][str_replace("#/components/responses/", "", $response['$ref'])];
             }
 
-            if ($statusCode >= 200 && $statusCode < 300) {
-                $responseComment = $response["description"] ?? null;
-            }
-
             if (!isset($response["content"])) {
-                $responseTypes[] = "\\Mittwald\\ApiClient\\Client\\EmptyResponse";
-                $responseMatchBuilder->addArm($statusCode, "new \\Mittwald\\ApiClient\\Client\\EmptyResponse(\$httpResponse)");
+                $responseTypes[] = new OperationResponse(
+                    type: "\\Mittwald\\ApiClient\\Client\\EmptyResponse",
+                    statusCode: $statusCode,
+                    builderExpr: "new \\Mittwald\\ApiClient\\Client\\EmptyResponse(\$httpResponse)",
+                    comment: $response["description"] ?? null,
+                );
                 continue;
             }
 
             if (!isset($response["content"]["application/json"]["schema"])) {
-                $responseTypes[] = "\\Mittwald\\ApiClient\\Client\\StringResponse";
-                $responseMatchBuilder->addArm($statusCode, "\\Mittwald\\ApiClient\\Client\\StringResponse::fromResponse(\$httpResponse)");
+                $responseTypes[] = new OperationResponse(
+                    type: "\\Mittwald\\ApiClient\\Client\\StringResponse",
+                    statusCode: $statusCode,
+                    builderExpr: "\\Mittwald\\ApiClient\\Client\\StringResponse::fromResponse(\$httpResponse)",
+                    comment: $response["description"] ?? null,
+                );
                 continue;
             }
 
             $responseSchema = $response["content"]["application/json"]["schema"];
 
-            $responseClassName      = ucfirst($methodName) . ($statusCode === "default" ? "Default" : $statusCode) . "Response";
+            $statusCodeAsText = $statusCode === "default" ? "Default" : StatusTranslator::statusCodeToText($statusCode);
+
+            $responseClassName      = ucfirst($methodName) . $statusCodeAsText . "Response";
             $responseClassNamespace = $namespace . "\\" . ucfirst($methodName);
             $responseClassNameFQ    = $responseClassNamespace . "\\" . $responseClassName;
             $outputDir              = GeneratorUtil::outputDirForClass($this->context, $responseClassNameFQ);
@@ -296,8 +302,15 @@ class ClientGenerator
             );
             $factoryMethod->setReturnType("self");
 
+            $getResponseMethod = new MethodGenerator(
+                name: "getResponse",
+                body: "return \$this->httpResponse;",
+            );
+            $getResponseMethod->setReturnType("\\Psr\\Http\\Message\\ResponseInterface|null");
+
             $httpResponseProperty = new PropertyGenerator(
                 name: "httpResponse",
+                flags: PropertyGenerator::FLAG_PRIVATE,
                 type: TypeGenerator::fromTypeString("\\Psr\\Http\\Message\\ResponseInterface|null"),
             );
 
@@ -312,46 +325,78 @@ class ClientGenerator
             $req = new GeneratorRequest($envelopedResponseSchema, new ValidatedSpecificationFilesItem($responseClassNamespace, $responseClassName, $outputDir), $this->generatorOpts);
             $req = $req->withReferenceLookup($this->referenceLookup);
             $req = $req->withAdditionalMethod($factoryMethod);
+            $req = $req->withAdditionalMethod($getResponseMethod);
             $req = $req->withAdditionalProperty($httpResponseProperty);
+            $req = $req->withAdditionalInterface("\\Mittwald\\ApiClient\\Client\\ResponseContainer");
 
             if (!NestedObjectProperty::canHandleSchema($responseSchema) && !ReferenceProperty::canHandleSchema($responseSchema) && !ReferenceArrayProperty::canHandleSchema($responseSchema) && !ObjectArrayProperty::canHandleSchema($responseSchema)) {
-                $responseTypes[] = "\\Mittwald\\ApiClient\\Client\\UntypedResponse";
-                $responseMatchBuilder->addArm($statusCode, "\\Mittwald\\ApiClient\\Client\\UntypedResponse::fromResponse(\$httpResponse)");
+                $responseTypes[] = new OperationResponse(
+                    type: "\\Mittwald\\ApiClient\\Client\\UntypedResponse",
+                    statusCode: $statusCode,
+                    builderExpr: "\\Mittwald\\ApiClient\\Client\\UntypedResponse::fromResponse(\$httpResponse)",
+                    comment: $response["description"] ?? null,
+                );
                 continue;
             }
 
             $this->classBuilder->schemaToClass($req);
 
-            $responseTypes[] = '\\' . $responseClassNameFQ;
-            $responseMatchBuilder->addArm($statusCode, "\\{$responseClassNameFQ}::fromResponse(\$httpResponse)");
+            $responseTypes[] = new OperationResponse(
+                type: '\\' . $responseClassNameFQ,
+                statusCode: $statusCode,
+                builderExpr: "\\{$responseClassNameFQ}::fromResponse(\$httpResponse)",
+                comment: $response["description"] ?? null,
+            );
         }
 
-        $body .= "return " . $responseMatchBuilder->generate() . ";\n";
+        $defaultResponse = OperationResponse::getSuccessfulResponse($responseTypes);
+        $errorResponses  = OperationResponse::getUnsuccessfulResponses($responseTypes);
 
-        $responseTypes = array_unique($responseTypes);
-        if (in_array("mixed", $responseTypes)) {
-            $responseTypes = ["mixed"];
+        foreach ($errorResponses as $responseType) {
+            $responseMatchBuilder->addArm($responseType->statusCode, $responseType->builderExpr);
         }
+
+        if ($defaultResponse !== null && is_int($defaultResponse->statusCode)) {
+            $body .= "if (\$httpResponse->getStatusCode() === {$defaultResponse->statusCode}) {\n";
+        } else if ($defaultResponse === null || $defaultResponse->statusCode === "default") {
+            $body .= "if (\$httpResponse->getStatusCode() >= 200 && \$httpResponse->getStatusCode() < 300) {\n";
+        }
+
+        if ($defaultResponse === null) {
+            $body .= "    return;\n";
+        } else {
+            $body .= "    return {$defaultResponse->builderExpr};\n";
+        }
+        $body .= "}\n";
+        $body .= "throw new \\Mittwald\\ApiClient\\Error\\UnexpectedResponseException(" . $responseMatchBuilder->generate() . ");\n";
 
         $docComment = new DocBlockGenerator();
         $docComment->setShortDescription($operationData["summary"] ?? "Invoke the `{$operationId}` operation");
         $docComment->setTag(new GenericTag("see", CommentUtils::generateOperationLink($tag, $operationId)));
         $docComment->setTag(new ThrowsTag("\\GuzzleHttp\\Exception\\GuzzleException"));
+        $docComment->setTag(new ThrowsTag("\\Mittwald\\ApiClient\\Error\\UnexpectedResponseException"));
         $docComment->setTag(new ParamTag("request", '\\' . $parameterClass, "An object representing the request for this operation"));
         $docComment->setWordWrap(false);
+
+        $deprecatedByName = str_starts_with($operationId, "deprecated-");
+        $deprecatedBySpec = isset($operationData["deprecated"]) && $operationData["deprecated"];
+
+        if ($deprecatedByName || $deprecatedBySpec) {
+            $docComment->setTag(new GenericTag("deprecated"));
+        }
 
         if (isset($operationData["description"])) {
             $docComment->setLongDescription($operationData["description"]);
         }
 
-        if ($responseComment !== null) {
-            $docComment->setTag(new ReturnTag(implode("|", $responseTypes), $responseComment));
+        if ($defaultResponse !== null) {
+            $docComment->setTag(new ReturnTag($defaultResponse->type, $defaultResponse->comment));
         }
 
         $method = new MethodGenerator(name: $methodName);
         $method->setBody($body);
         $method->setParameters($parameterGenerators);
-        $method->setReturnType(implode("|", $responseTypes));
+        $method->setReturnType($defaultResponse ? $defaultResponse->type : "void");
         $method->setDocBlock($docComment);
 
         return $method;

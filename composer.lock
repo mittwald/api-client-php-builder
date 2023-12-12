@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "e51ddb5a925d966d3848edfa87ab4342",
+    "content-hash": "5222f48bb6fe575c280745faccbe878b",
     "packages": [
         {
             "name": "composer/semver",
@@ -89,16 +89,16 @@
         },
         {
             "name": "helmich/schema2class",
-            "version": "v3.2.0",
+            "version": "dev-feature-add-interface",
             "source": {
                 "type": "git",
                 "url": "https://github.com/martin-helmich/php-schema2class.git",
-                "reference": "500fb6a732804edcd9b6eda9fc12646a456e740b"
+                "reference": "f2d8ce43bf07f285b4ffece5b00db0364a06fa50"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/martin-helmich/php-schema2class/zipball/500fb6a732804edcd9b6eda9fc12646a456e740b",
-                "reference": "500fb6a732804edcd9b6eda9fc12646a456e740b",
+                "url": "https://api.github.com/repos/martin-helmich/php-schema2class/zipball/f2d8ce43bf07f285b4ffece5b00db0364a06fa50",
+                "reference": "f2d8ce43bf07f285b4ffece5b00db0364a06fa50",
                 "shasum": ""
             },
             "require": {
@@ -138,7 +138,7 @@
             "description": "Build PHP classes from JSON schema definitions",
             "support": {
                 "issues": "https://github.com/martin-helmich/php-schema2class/issues",
-                "source": "https://github.com/martin-helmich/php-schema2class/tree/v3.2.0"
+                "source": "https://github.com/martin-helmich/php-schema2class/tree/feature-add-interface"
             },
             "funding": [
                 {
@@ -150,7 +150,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2023-12-11T17:02:57+00:00"
+            "time": "2023-12-11T20:58:33+00:00"
         },
         {
             "name": "justinrainbow/json-schema",
@@ -1069,7 +1069,9 @@
     "packages-dev": [],
     "aliases": [],
     "minimum-stability": "dev",
-    "stability-flags": [],
+    "stability-flags": {
+        "helmich/schema2class": 20
+    },
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": [],
