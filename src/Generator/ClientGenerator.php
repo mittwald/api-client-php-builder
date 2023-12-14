@@ -426,6 +426,9 @@ class ClientGenerator
                 }
             }
         }
+
+        usort($operations, fn(array $a, array $b): int => strcmp($a[2]["operationId"], $b[2]["operationId"]));
+        
         return $operations;
     }
 }
