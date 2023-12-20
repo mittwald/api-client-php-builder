@@ -421,7 +421,7 @@ class ClientGenerator
         $operations = [];
         foreach ($this->context->schema["paths"] as $path => $pathOperations) {
             foreach ($pathOperations as $method => $operationData) {
-                if (in_array($tag, $operationData["tags"])) {
+                if (in_array($tag, $operationData["tags"]) && isset($operationData["operationId"])) {
                     $operations[] = [$path, $method, $operationData];
                 }
             }
