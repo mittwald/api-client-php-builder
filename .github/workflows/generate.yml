@@ -32,6 +32,13 @@ jobs:
       - name: Generate client
         run: php ./cmd/generate.php generate https://api.mittwald.de/openapi ./.work -v
 
+      - name: Run code formatting on generated client
+        working-directory: .work
+        run: |
+          composer install --prefer-dist --no-progress --no-suggest
+          composer run format
+          composer run check
+
       - run: git status
         working-directory: .work
 
@@ -41,10 +48,6 @@ jobs:
           GH_TOKEN: ${{ secrets.MACHINE_USER_TOKEN }}
         run: |
           set -ex
-          
-          composer install --prefer-dist --no-progress --no-suggest
-          vendor/bin/psalm
-          composer run format
           
           if [[ $(git status --porcelain | wc -l) -eq 0 ]]; then
             echo "No changes detected, skipping commit."
