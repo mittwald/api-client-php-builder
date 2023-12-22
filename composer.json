@@ -16,7 +16,7 @@
   ],
   "require": {
     "symfony/console": "^6.3",
-    "helmich/schema2class": "dev-feature-add-interface"
+    "helmich/schema2class": "dev-master"
   },
   "scripts": {
     "clone-target": "if [ -d .work ] ; then cd .work && git fetch && git checkout -- . && git clean -fxd . && git reset --hard origin/master ; else git clone https://github.com/mittwald/api-client-php.git ./.work ; fi",

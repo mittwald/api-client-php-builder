@@ -147,7 +147,7 @@ class ClientGenerator
             "required"   => [],
         ];
 
-        $getUrlBody   = "\$mapped = \$this->toJson();\n";
+        $buildUrlBody = "\$mapped = \$this->toJson();\n";
         $getQueryBody = "\$mapped = \$this->toJson();\n\$query = [];\n";
 
         foreach ($pathParameters as $param) {
@@ -158,7 +158,7 @@ class ClientGenerator
 
             $paramName    = $param["name"];
             $paramNameStr = var_export($paramName, true);
-            $getUrlBody   .= "\${$paramName} = urlencode(\$mapped[{$paramNameStr}]);\n";
+            $buildUrlBody .= "\${$paramName} = urlencode(\$mapped[{$paramNameStr}]);\n";
 
             $url = str_replace("{{$param["name"]}}", '\' . $' . $paramName . ' . \'', $url);
             $url = str_replace(" . ''", "", $url);
@@ -175,16 +175,43 @@ class ClientGenerator
             $getQueryBody .= "if (isset(\$mapped[{$paramNameStr}])) {\n    \$query[{$paramNameStr}] = \$mapped[{$paramNameStr}];\n}\n";
         }
 
-        $getUrlBody   .= "return {$url};\n";
-        $getUrlMethod = new MethodGenerator(name: "getUrl", body: $getUrlBody);
-        $getUrlMethod->setReturnType("string");
+        $buildUrlBody   .= "return {$url};\n";
+        $buildUrlMethod = new MethodGenerator(name: "buildUrl", body: $buildUrlBody);
+        $buildUrlMethod->setReturnType("string");
+        $buildUrlMethod->setDocBlock(new DocBlockGenerator(
+            shortDescription: "Builds the URL for this request",
+            longDescription: "This method is used internally by the client to build the URL for this request. You should not need to call this method directly.",
+            tags: [
+                new GenericTag("internal"),
+                new ReturnTag("string", "The URL for this request"),
+            ],
+        ));
 
-        $getQueryBody   .= "return \$query;\n";
-        $getQueryMethod = new MethodGenerator(name: "getQuery", body: $getQueryBody);
-        $getQueryMethod->setReturnType("array");
+        $buildRequestOptionsBody = $getQueryBody . "return [\n";
+        $buildRequestOptionsBody .= "    'query' => \$query,\n";
+        $buildRequestOptionsBody .= "    'headers' => \$this->headers,\n";
 
-        $getHeadersMethod = new MethodGenerator(name: "getHeaders", body: "return \$this->headers;\n");
-        $getHeadersMethod->setReturnType("array");
+        $bodySchema = $operationData["requestBody"]["content"]["application/json"]["schema"] ?? null;
+        if ($bodySchema !== null) {
+            if (isset($bodySchema["type"]) && $bodySchema["type"] === "array") {
+                $buildRequestOptionsBody .= "    'json' => \$this->toJson()['body'],\n";
+            } else {
+                $buildRequestOptionsBody .= "    'json' => \$this->getBody()->toJson(),\n";
+            }
+        }
+
+        $buildRequestOptionsBody .= "];";
+
+        $buildRequestOptionsMethod = new MethodGenerator(name: "buildRequestOptions", body: $buildRequestOptionsBody);
+        $buildRequestOptionsMethod->setReturnType("array");
+        $buildRequestOptionsMethod->setDocBlock(new DocBlockGenerator(
+            shortDescription: "Builds the request options for this request",
+            longDescription: "This method is used internally by the client to build the Guzzle request options for this request. You should not need to call this method directly.",
+            tags: [
+                new GenericTag("internal"),
+                new ReturnTag("array", "The Guzzle request options for this request")
+            ],
+        ));
 
         $withHeaderMethod = new MethodGenerator(
             name: "withHeader",
@@ -195,6 +222,15 @@ class ClientGenerator
             body: "\$clone = clone \$this;\n\$clone->headers[\$name] = \$value;\nreturn \$clone;",
         );
         $withHeaderMethod->setReturnType("self");
+        $withHeaderMethod->setDocBlock(new DocBlockGenerator(
+            shortDescription: "Adds a header to this request",
+            longDescription: "You can use this method to add custom HTTP headers to the request.",
+            tags: [
+                new ParamTag("name", "string", "The name of the header to add"),
+                new ParamTag("value", "string|array", "The value of the header to add"),
+                new ReturnTag("self", "A clone of this request with the header added"),
+            ],
+        ));
 
         $bodySchema = $operationData["requestBody"]["content"]["application/json"]["schema"] ?? null;
         if ($bodySchema !== null) {
@@ -209,9 +245,8 @@ class ClientGenerator
         $req = new GeneratorRequest($paramClassSchema, new ValidatedSpecificationFilesItem($paramClassNamespace, $paramClassName, $outputDir), $this->generatorOpts);
         $req = $req->withAdditionalProperty($methodProperty);
         $req = $req->withAdditionalProperty($headerProperty);
-        $req = $req->withAdditionalMethod($getUrlMethod);
-        $req = $req->withAdditionalMethod($getQueryMethod);
-        $req = $req->withAdditionalMethod($getHeadersMethod);
+        $req = $req->withAdditionalMethod($buildUrlMethod);
+        $req = $req->withAdditionalMethod($buildRequestOptionsMethod);
         $req = $req->withAdditionalMethod($withHeaderMethod);
         $req = $req->withReferenceLookup($this->referenceLookup);
 
@@ -232,22 +267,8 @@ class ClientGenerator
             ),
         ];
 
-        $body = "\$httpRequest = new Request(\\" . $parameterClass . "::method, \$request->getUrl());\n";
-
-        $bodySchema = $operationData["requestBody"]["content"]["application/json"]["schema"] ?? null;
-        $body       .= "\$httpResponse = \$this->client->send(\$httpRequest, [\n";
-        $body       .= "    'query' => \$request->getQuery(),\n";
-        $body       .= "    'headers' => \$request->getHeaders(),\n";
-
-        if ($bodySchema !== null) {
-            if (isset($bodySchema["type"]) && $bodySchema["type"] === "array") {
-                $body .= "    'json' => \$request->toJson()['body'],\n";
-            } else {
-                $body .= "    'json' => \$request->getBody()->toJson(),\n";
-            }
-        }
-
-        $body .= "]);\n";
+        $body = "\$httpRequest = new Request(\\" . $parameterClass . "::method, \$request->buildUrl());\n";
+        $body .= "\$httpResponse = \$this->client->send(\$httpRequest, \$request->buildRequestOptions());\n";
 
         $responseMatchBuilder = new MatchGenerator("\$httpResponse->getStatusCode()");
         $responses            = $operationData["responses"] ?? [];
@@ -428,7 +449,7 @@ class ClientGenerator
         }
 
         usort($operations, fn(array $a, array $b): int => strcmp($a[2]["operationId"], $b[2]["operationId"]));
-        
+
         return $operations;
     }
 }
