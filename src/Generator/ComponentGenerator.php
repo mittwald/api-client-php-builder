@@ -74,7 +74,8 @@ class ComponentGenerator
         $opts = (new SpecificationOptions())
             ->withTargetPHPVersion("8.2")
             ->withTreatValuesWithDefaultAsOptional(true)
-            ->withInlineAllofReferences(true);
+            ->withInlineAllofReferences(true)
+            ->withNewValidatorClassExpr("new \Mittwald\ApiClient\Validator\Validator()");
 
         $request = new GeneratorRequest($component, $spec, $opts);
         $request = $request->withReferenceLookup(new SchemaReferenceLookup($this->context));
