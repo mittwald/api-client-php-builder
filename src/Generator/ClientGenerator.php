@@ -343,7 +343,10 @@ class ClientGenerator
                 ],
             ];
 
-            $req = new GeneratorRequest($envelopedResponseSchema, new ValidatedSpecificationFilesItem($responseClassNamespace, $responseClassName, $outputDir), $this->generatorOpts);
+            $opts = $this->generatorOpts
+                ->withNewValidatorClassExpr("new \Mittwald\ApiClient\Validator\Validator()");
+
+            $req = new GeneratorRequest($envelopedResponseSchema, new ValidatedSpecificationFilesItem($responseClassNamespace, $responseClassName, $outputDir), $opts);
             $req = $req->withReferenceLookup($this->referenceLookup);
             $req = $req->withAdditionalMethod($factoryMethod);
             $req = $req->withAdditionalMethod($getResponseMethod);
