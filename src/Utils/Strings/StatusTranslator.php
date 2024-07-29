@@ -50,6 +50,7 @@ class StatusTranslator
         424 => 'FailedDependency',
         425 => 'UnorderedCollection',
         426 => 'UpgradeRequired',
+        429 => 'TooManyRequests',
         449 => 'RetryWith',
         450 => 'BlockedByWindowsParentalControls',
         500 => 'InternalServerError',
