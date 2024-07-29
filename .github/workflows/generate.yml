@@ -57,9 +57,11 @@ jobs:
 
           git config --global user.name "mittwald-machine"
           git config --global user.email "opensource@mittwald.de"
-          git add src
           
-          ../cmd/generate.php generate-commit-message --from-uncommitted | git commit -F -
+          ../cmd/generate.php generate-commit-message --from-uncommitted > commit-message.txt
+          
+          git add src
+          git commit -F commit-message.txt
           
           last_tag=$(git describe --abbrev=0 --tags)
           new_tag=$(php ../cmd/generate.php version "${last_tag}")
