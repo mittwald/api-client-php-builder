@@ -18,12 +18,19 @@ class GenerateCommitMessage extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $diff = [];
+        $diffLines = [];
 
         if ($input->getOption('from-uncommitted')) {
-            exec("git diff", $diff);
+            exec("git diff", $diffLines);
         } else {
-            exec("git diff HEAD^..HEAD", $diff);
+            exec("git diff HEAD^..HEAD", $diffLines);
+        }
+
+        $diff = join("\n", $diffLines);
+
+        // When the diff is too long, simply truncate it to <1MB and hope for the best
+        if (strlen($diff) > 1048576) {
+            $diff = substr($diff, 0, 1048576);
         }
 
         $yourApiKey = getenv('OPENAI_API_KEY');
@@ -33,7 +40,7 @@ class GenerateCommitMessage extends Command
             'model' => 'gpt-4o-mini',
             'messages' => [
                 ['role' => 'system', 'content' => 'You will be provided a Git diff. Generate a commit message from it, following the conventional commit message format. Provide the output in plain text, without any additional formatting.'],
-                ['role' => 'user', 'content' => join("\n", $diff)],
+                ['role' => 'user', 'content' => $diff],
             ],
         ]);
 

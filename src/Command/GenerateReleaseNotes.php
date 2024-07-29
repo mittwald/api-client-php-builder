@@ -17,9 +17,16 @@ class GenerateReleaseNotes extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $diff = [];
+        $diffLines = [];
 
-        exec("git diff HEAD^..HEAD", $diff);
+        exec("git diff HEAD^..HEAD", $diffLines);
+
+        $diff = join("\n", $diffLines);
+
+        // When the diff is too long, simply truncate it to <1MB and hope for the best
+        if (strlen($diff) > 1048576) {
+            $diff = substr($diff, 0, 1048576);
+        }
 
         $yourApiKey = getenv('OPENAI_API_KEY');
         $client = OpenAI::client($yourApiKey);
@@ -28,7 +35,7 @@ class GenerateReleaseNotes extends Command
             'model' => 'gpt-4o-mini',
             'messages' => [
                 ['role' => 'system', 'content' => 'You will be provided a Git diff. Generate a Github release notes document, in markdown format. Your response should include ONLY the release notes without any additional start or end markers. Do not include a generic heading or date information; start any intermediate headings at the h2 level. When features are added, also include a high-level summary of said features.'],
-                ['role' => 'user', 'content' => join("\n", $diff)],
+                ['role' => 'user', 'content' => $diff],
             ],
         ]);
 
