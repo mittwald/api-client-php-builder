@@ -46,7 +46,7 @@ jobs:
         working-directory: .work
         env:
           GH_TOKEN: ${{ secrets.MACHINE_USER_TOKEN }}
-          OPENAI_API_TOKEN: ${{ secrets.OPENAI_API_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           set -ex
           
