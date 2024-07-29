@@ -23,9 +23,10 @@ class GenerateReleaseNotes extends Command
 
         $diff = join("\n", $diffLines);
 
-        // When the diff is too long, simply truncate it to <1MB and hope for the best
-        if (strlen($diff) > 1048576) {
-            $diff = substr($diff, 0, 1048576);
+        // When the diff is too long, simply truncate it to <256K and hope for the best
+        // The theoretical message limit is 1MB, but there's also the maximum token limit to consider
+        if (strlen($diff) > 256 * 1024) {
+            $diff = substr($diff, 0, 256 * 1024);
         }
 
         $yourApiKey = getenv('OPENAI_API_KEY');
