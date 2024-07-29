@@ -57,14 +57,17 @@ jobs:
           git config --global user.name "mittwald-machine"
           git config --global user.email "opensource@mittwald.de"
           git add src
-          git commit -m "Update generated client"
+          
+          ../cmd/generate.php generate-commit-message --from-uncommitted | git commit -F -
           
           last_tag=$(git describe --abbrev=0 --tags)
           new_tag=$(php ../cmd/generate.php version "${last_tag}")
           
           git tag -m "Release ${new_tag}" ${new_tag}
-          git remote add publish "https://mittwald-macine:${{ secrets.MACHINE_USER_TOKEN }}@github.com/mittwald/api-client-php.git"
+          git remote add publish "https://mittwald-machine:${{ secrets.MACHINE_USER_TOKEN }}@github.com/mittwald/api-client-php.git"
           git push publish
           git push --tags publish
           
-          gh release create --verify-tag --generate-notes --latest -R mittwald/api-client-php "${new_tag}"
+          ../cmd/generate.php generate-release-notes > release-notes.md
+          
+          gh release create --verify-tag --notes-file release-notes.md --latest -R mittwald/api-client-php "${new_tag}"

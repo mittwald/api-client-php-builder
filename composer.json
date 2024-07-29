@@ -16,7 +16,10 @@
   ],
   "require": {
     "symfony/console": "^6.3",
-    "helmich/schema2class": "^3.3.2"
+    "helmich/schema2class": "^3.3.2",
+    "openai-php/client": "^0.10.1",
+    "symfony/http-client": "^7.1",
+    "nyholm/psr7": "^1.8"
   },
   "scripts": {
     "clone-target": "if [ -d .work ] ; then cd .work && git fetch && git checkout -- . && git clean -fxd . && git reset --hard origin/master ; else git clone https://github.com/mittwald/api-client-php.git ./.work ; fi",
@@ -29,5 +32,10 @@
     ]
   },
   "minimum-stability": "dev",
-  "prefer-stable": true
+  "prefer-stable": true,
+  "config": {
+    "allow-plugins": {
+      "php-http/discovery": true
+    }
+  }
 }
