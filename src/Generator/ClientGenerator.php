@@ -111,7 +111,6 @@ class ClientGenerator
     {
         // Do some corrections because the Zend code generation library is stupid.
         $content = preg_replace('/ : \\\\self/', ' : self', $content);
-        $content = preg_replace('/\\\\' . preg_quote($baseNamespace) . '\\\\/', '', $content);
 
         return $content;
     }
