@@ -50,13 +50,17 @@ class ClientGenerator
     /**
      * @param array{description: string, name: string} $tag
      */
-    public function generate(string $baseNamespace, array $tag): void
+    public function generate(string $baseNamespace, array $tag): ClientGenerationResult
     {
         $ifaceName = ucfirst(preg_replace("/[^a-zA-Z0-9]/", "", $tag["name"])) . "Client";
         $clsName   = $ifaceName . "Impl";
 
         $operations       = $this->collectOperations($tag["name"]);
         $operationMethods = $this->buildOperationMethods($baseNamespace, $tag["name"], $operations);
+
+        if (count($operationMethods) === 0) {
+            return new ClientGenerationResult(generated: false, operationCount: 0);
+        }
 
         $constructor = new MethodGenerator(
             name: "__construct",
@@ -105,6 +109,8 @@ class ClientGenerator
 
         $this->writer->writeFile("{$outputDir}/{$ifaceName}.php", $ifaceContent);
         $this->writer->writeFile("{$outputDir}/{$clsName}.php", $clsContent);
+
+        return new ClientGenerationResult(generated: true, operationCount: count($operationMethods));
     }
 
     private function sanitizeOutput(string $content, string $baseNamespace): string
