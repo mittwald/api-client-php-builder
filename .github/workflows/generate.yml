@@ -7,6 +7,16 @@ jobs:
   generate:
     runs-on: ubuntu-22.04
 
+    strategy:
+      matrix:
+        source:
+          - url: https://api.mittwald.de/v2/openapi.json
+            branch: master
+            tag: "true"
+          - url: https://developer.mittwald.de/specs/openapi-v2-dev.json
+            branch: next
+            tag: "false"
+
     steps:
       - uses: actions/checkout@v3
 
@@ -21,6 +31,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: 'mittwald/api-client-php'
+          ref: ${{ matrix.source.branch }}
           path: '.work'
           token: ${{ secrets.MACHINE_USER_TOKEN }}
           fetch-tags: true
@@ -30,7 +41,7 @@ jobs:
         run: rm -rf .work/src/Generated
 
       - name: Generate client
-        run: php ./cmd/generate.php generate https://api.mittwald.de/openapi ./.work -v
+        run: php ./cmd/generate.php generate ${{ matrix.source.url }} ./.work -v
 
       - name: Run code formatting on generated client
         working-directory: .work
@@ -62,15 +73,19 @@ jobs:
           
           git add src
           git commit -F commit-message.txt
-          
-          last_tag=$(git describe --abbrev=0 --tags)
-          new_tag=$(php ../cmd/generate.php version "${last_tag}")
-          
-          git tag -m "Release ${new_tag}" ${new_tag}
           git remote add publish "https://mittwald-machine:${{ secrets.MACHINE_USER_TOKEN }}@github.com/mittwald/api-client-php.git"
-          git push publish
-          git push --tags publish
           
-          ../cmd/generate.php generate-release-notes > release-notes.md
-          
-          gh release create --verify-tag --notes-file release-notes.md --latest -R mittwald/api-client-php "${new_tag}"
+          if [[ "${{ matrix.source.tag }}" == "true" ]] ; then
+            last_tag=$(git describe --abbrev=0 --tags)
+            new_tag=$(php ../cmd/generate.php version "${last_tag}")
+            
+            git tag -m "Release ${new_tag}" ${new_tag}
+            git push publish
+            git push --tags publish
+            
+            ../cmd/generate.php generate-release-notes > release-notes.md
+            
+            gh release create --verify-tag --notes-file release-notes.md --latest -R mittwald/api-client-php "${new_tag}"
+          else
+            git push publish
+          fi
