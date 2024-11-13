@@ -16,7 +16,7 @@
   ],
   "require": {
     "symfony/console": "^6.3",
-    "helmich/schema2class": "^3.3.4",
+    "helmich/schema2class": "^3.3.6",
     "openai-php/client": "^0.10.1",
     "symfony/http-client": "^7.1",
     "nyholm/psr7": "^1.8"

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "6eca0b84d469451b6e7b33b059d9a324",
+    "content-hash": "34b90e8923aeac756ae0aaa76ea025b0",
     "packages": [
         {
             "name": "composer/semver",
@@ -89,16 +89,16 @@
         },
         {
             "name": "helmich/schema2class",
-            "version": "v3.3.4",
+            "version": "v3.3.6",
             "source": {
                 "type": "git",
                 "url": "https://github.com/martin-helmich/php-schema2class.git",
-                "reference": "de5aac61289fa077e5661e33a6b0fba6ab72053c"
+                "reference": "2c7e3cf9f7e86d446af49be5009d6993c13fdc86"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/martin-helmich/php-schema2class/zipball/de5aac61289fa077e5661e33a6b0fba6ab72053c",
-                "reference": "de5aac61289fa077e5661e33a6b0fba6ab72053c",
+                "url": "https://api.github.com/repos/martin-helmich/php-schema2class/zipball/2c7e3cf9f7e86d446af49be5009d6993c13fdc86",
+                "reference": "2c7e3cf9f7e86d446af49be5009d6993c13fdc86",
                 "shasum": ""
             },
             "require": {
@@ -114,7 +114,7 @@
                 "phpspec/prophecy": "^1.17",
                 "phpspec/prophecy-phpunit": "^2.0",
                 "phpunit/phpunit": "^10.5",
-                "vimeo/psalm": "^5.12"
+                "vimeo/psalm": "^5.26"
             },
             "bin": [
                 "cmd/s2c"
@@ -138,7 +138,7 @@
             "description": "Build PHP classes from JSON schema definitions",
             "support": {
                 "issues": "https://github.com/martin-helmich/php-schema2class/issues",
-                "source": "https://github.com/martin-helmich/php-schema2class/tree/v3.3.4"
+                "source": "https://github.com/martin-helmich/php-schema2class/tree/v3.3.6"
             },
             "funding": [
                 {
@@ -150,7 +150,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2024-09-04T14:53:19+00:00"
+            "time": "2024-11-13T09:42:27+00:00"
         },
         {
             "name": "icecave/parity",
