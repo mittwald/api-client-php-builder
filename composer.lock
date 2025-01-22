@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "bc6281fc684d3ff13ea80269fc24bd10",
+    "content-hash": "f6b6c99d17a02a0d19825cf89d089948",
     "packages": [
         {
             "name": "composer/semver",
@@ -89,16 +89,16 @@
         },
         {
             "name": "helmich/schema2class",
-            "version": "v3.3.8",
+            "version": "v3.3.9",
             "source": {
                 "type": "git",
                 "url": "https://github.com/martin-helmich/php-schema2class.git",
-                "reference": "8a0f97cd54f1c59521ac98ee6c63ae90be36b751"
+                "reference": "6c29a023e57b52cf8ec725f4679507b286485b55"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/martin-helmich/php-schema2class/zipball/8a0f97cd54f1c59521ac98ee6c63ae90be36b751",
-                "reference": "8a0f97cd54f1c59521ac98ee6c63ae90be36b751",
+                "url": "https://api.github.com/repos/martin-helmich/php-schema2class/zipball/6c29a023e57b52cf8ec725f4679507b286485b55",
+                "reference": "6c29a023e57b52cf8ec725f4679507b286485b55",
                 "shasum": ""
             },
             "require": {
@@ -138,7 +138,7 @@
             "description": "Build PHP classes from JSON schema definitions",
             "support": {
                 "issues": "https://github.com/martin-helmich/php-schema2class/issues",
-                "source": "https://github.com/martin-helmich/php-schema2class/tree/v3.3.8"
+                "source": "https://github.com/martin-helmich/php-schema2class/tree/v3.3.9"
             },
             "funding": [
                 {
@@ -150,7 +150,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2025-01-21T21:03:50+00:00"
+            "time": "2025-01-22T08:56:39+00:00"
         },
         {
             "name": "icecave/parity",
