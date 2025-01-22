@@ -38,4 +38,5 @@ jobs:
           set -ex
           
           composer install --prefer-dist --no-progress --no-suggest
-          vendor/bin/psalm
+          composer run check
+          composer run test

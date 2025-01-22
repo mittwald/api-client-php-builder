@@ -48,7 +48,11 @@ jobs:
         run: |
           composer install --prefer-dist --no-progress --no-suggest
           composer run format
+
+      - name: Verify generated client
+        run: |
           composer run check
+          composer run test
 
       - run: git status
         working-directory: .work
