@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "f6b6c99d17a02a0d19825cf89d089948",
+    "content-hash": "fa25d30b3fb2c8d43321f0c1b7b5a4ff",
     "packages": [
         {
             "name": "composer/semver",
@@ -89,16 +89,16 @@
         },
         {
             "name": "helmich/schema2class",
-            "version": "v3.3.9",
+            "version": "v3.3.10",
             "source": {
                 "type": "git",
                 "url": "https://github.com/martin-helmich/php-schema2class.git",
-                "reference": "6c29a023e57b52cf8ec725f4679507b286485b55"
+                "reference": "0952adcac9efa40dce56e0fd28f40106b2ee8649"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/martin-helmich/php-schema2class/zipball/6c29a023e57b52cf8ec725f4679507b286485b55",
-                "reference": "6c29a023e57b52cf8ec725f4679507b286485b55",
+                "url": "https://api.github.com/repos/martin-helmich/php-schema2class/zipball/0952adcac9efa40dce56e0fd28f40106b2ee8649",
+                "reference": "0952adcac9efa40dce56e0fd28f40106b2ee8649",
                 "shasum": ""
             },
             "require": {
@@ -113,6 +113,7 @@
             "require-dev": {
                 "phpspec/prophecy": "^1.17",
                 "phpspec/prophecy-phpunit": "^2.0",
+                "phpstan/phpstan": "^2.1.2",
                 "phpunit/phpunit": "^10.5",
                 "vimeo/psalm": "^5.26"
             },
@@ -138,7 +139,7 @@
             "description": "Build PHP classes from JSON schema definitions",
             "support": {
                 "issues": "https://github.com/martin-helmich/php-schema2class/issues",
-                "source": "https://github.com/martin-helmich/php-schema2class/tree/v3.3.9"
+                "source": "https://github.com/martin-helmich/php-schema2class/tree/v3.3.10"
             },
             "funding": [
                 {
@@ -150,7 +151,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2025-01-22T08:56:39+00:00"
+            "time": "2025-01-22T09:15:32+00:00"
         },
         {
             "name": "icecave/parity",
