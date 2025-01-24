@@ -50,6 +50,7 @@ jobs:
           composer run format
 
       - name: Verify generated client
+        working-directory: .work
         run: |
           composer run check
           composer run test
