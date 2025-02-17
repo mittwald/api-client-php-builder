@@ -8,6 +8,11 @@
       "Mittwald\\ApiToolsPHP\\": "src/"
     }
   },
+  "autoload-dev": {
+    "psr-4": {
+      "Mittwald\\ApiToolsPHP\\": "tests/"
+    }
+  },
   "authors": [
     {
       "name": "Martin Helmich",
@@ -22,6 +27,7 @@
     "nyholm/psr7": "^1.8"
   },
   "scripts": {
+    "test": "phpunit --testdox --color",
     "clone-target": "if [ -d .work ] ; then cd .work && git fetch && git checkout -- . && git clean -fxd . && git reset --hard origin/master ; else git clone https://github.com/mittwald/api-client-php.git ./.work ; fi",
     "setup-target": "cd .work && composer install --no-interaction",
     "generate": [
@@ -37,5 +43,8 @@
     "allow-plugins": {
       "php-http/discovery": true
     }
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^12.0"
   }
 }

@@ -3,27 +3,16 @@ namespace Mittwald\ApiToolsPHP\Generator;
 
 use Helmich\Schema2Class\Generator\GeneratorRequest;
 use Helmich\Schema2Class\Generator\Hook\ClassCreatedHook;
-use Helmich\Schema2Class\Generator\Hook\EnumCreatedHook;
-use Helmich\Schema2Class\Generator\ReferencedType;
-use Helmich\Schema2Class\Generator\ReferencedTypeClass;
-use Helmich\Schema2Class\Generator\ReferencedTypeEnum;
-use Helmich\Schema2Class\Generator\ReferenceLookup;
-use Helmich\Schema2Class\Generator\ReferenceLookupResult;
-use Helmich\Schema2Class\Generator\ReferenceLookupResultType;
 use Helmich\Schema2Class\Generator\SchemaToClassFactory;
 use Helmich\Schema2Class\Spec\SpecificationOptions;
 use Helmich\Schema2Class\Spec\ValidatedSpecificationFilesItem;
-use Helmich\Schema2Class\Writer\DebugWriter;
 use Helmich\Schema2Class\Writer\FileWriter;
 use Laminas\Code\Generator\ClassGenerator;
 use Laminas\Code\Generator\DocBlock\Tag\GenericTag;
 use Laminas\Code\Generator\DocBlockGenerator;
-use Laminas\Code\Generator\EnumGenerator\EnumGenerator;
+use Mittwald\ApiToolsPHP\Utils\Strings\ClassNameConverter;
 use Symfony\Component\Console\Output\ConsoleOutput;
 
-/**
- * @generated
- */
 class ComponentGenerator
 {
     private Context $context;
@@ -32,7 +21,7 @@ class ComponentGenerator
     public static function componentNameToClassName(string $name): string {
         $name = str_replace("de.mittwald.v1.", "", $name);
         $parts = explode(".", $name);
-        $parts = array_map("ucfirst", $parts);
+        $parts = array_map(fn ($p) => ClassNameConverter::toClassName($p), $parts);
 
         return implode("\\", $parts);
     }

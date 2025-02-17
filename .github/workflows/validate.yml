@@ -26,6 +26,9 @@ jobs:
           token: ${{ secrets.MACHINE_USER_TOKEN }}
           fetch-tags: true
 
+      - name: Run generator tests
+        run: composer run test
+
       - name: Generate client
         run: php ./cmd/generate.php generate https://api.mittwald.de/openapi ./.work -v
 
