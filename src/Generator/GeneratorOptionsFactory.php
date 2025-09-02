@@ -15,6 +15,7 @@ class GeneratorOptionsFactory
         return (new SpecificationOptions())
             ->withTargetPHPVersion('8.2')
             ->withTreatValuesWithDefaultAsOptional(true)
-            ->withNewValidatorClassExpr("new \Mittwald\ApiClient\Validator\Validator()");
+            ->withNewValidatorClassExpr("new \Mittwald\ApiClient\Validator\Validator()")
+            ->withInlineAllofReferences(true);
     }
 }
