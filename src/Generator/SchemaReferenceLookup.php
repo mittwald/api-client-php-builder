@@ -85,7 +85,7 @@ class SchemaReferenceLookup implements ReferenceLookup
             isset($schema["enum"]) => new ReferencedTypeEnum($fqcn),
             isset($schema["items"]["\$ref"]) => new ReferencedTypeList($this->lookupReference($schema["items"]["\$ref"])),
             isset($schema["items"]["enum"]) => new ReferencedTypeList(new ReferencedTypeEnum($fqcn . "Item")),
-            isset($schema["items"]) => $this->buildTypeReference($fqcn . "Item", $schema["items"]),
+            isset($schema["items"]) => new ReferencedTypeList($this->buildTypeReference($fqcn . "Item", $schema["items"])),
             isset($schema["type"]) && $schema["type"] === "string" => new ReferencedString(),
             isset($schema["oneOf"]) => $this->buildUnionType($fqcn, $schema["oneOf"]),
             default => new ReferencedTypeClass($fqcn),
