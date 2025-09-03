@@ -59,7 +59,7 @@ class ReferencedTypeList implements ReferencedType
             $innerType = " : {$innerType}";
         }
 
-        $inputType = $this->innerType->serializedTypeHint($req);
+        $inputType = $this->innerType->serializedInputTypeHint($req);
         if ($inputType) {
             $inputType = "{$inputType} ";
         }
