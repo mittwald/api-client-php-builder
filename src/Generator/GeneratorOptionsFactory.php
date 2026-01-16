@@ -12,7 +12,7 @@ class GeneratorOptionsFactory
 {
     public static function buildGeneratorOptions(): SpecificationOptions
     {
-        return (new SpecificationOptions())
+        return new SpecificationOptions()
             ->withTargetPHPVersion('8.2')
             ->withTreatValuesWithDefaultAsOptional(true)
             ->withNewValidatorClassExpr("new \Mittwald\ApiClient\Validator\Validator()")
