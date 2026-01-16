@@ -10,4 +10,9 @@ class ClassNameConverter
         $words = array_map('ucfirst', $words);
         return implode("", $words);
     }
+
+    public static function toNamespaceName(string $input): string
+    {
+        return self::toClassName($input);
+    }
 }

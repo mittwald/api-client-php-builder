@@ -2,6 +2,9 @@
 
 namespace Mittwald\ApiToolsPHP\Generator;
 
+use Mittwald\ApiToolsPHP\Utils\Filesystem;
+use Mittwald\ApiToolsPHP\Utils\Strings\ClassNameConverter;
+
 class Generator
 {
     public function __construct(
@@ -15,6 +18,8 @@ class Generator
 
     public function generateComponents(): void
     {
+        Filesystem::removeDirectoryRecursive($this->context->outputPath . "/src/Generated/V{$this->context->version}/Schemas");
+
         foreach (["schemas"] as $componentType) {
             $componentNamespace = ucfirst($componentType);
             $baseNamespace      = "Mittwald\\ApiClient\\Generated\\V{$this->context->version}\\{$componentNamespace}";
@@ -27,10 +32,12 @@ class Generator
 
     public function generateClients(): void
     {
+        Filesystem::removeDirectoryRecursive($this->context->outputPath . "/src/Generated/V{$this->context->version}/Clients");
+
         $clients = [];
 
         foreach ($this->context->schema["tags"] as $tag) {
-            $clientNamespace = ucfirst(preg_replace("/[^a-zA-Z0-9]/", "", $tag["name"]));
+            $clientNamespace = ClassNameConverter::toNamespaceName($tag["name"]);
             $baseNamespace   = "Mittwald\\ApiClient\\Generated\\V{$this->context->version}\\Clients\\{$clientNamespace}";
 
             $result = $this->clientGenerator->generate($baseNamespace, $tag);
