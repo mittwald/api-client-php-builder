@@ -18,10 +18,24 @@ class ComponentGenerator
     private Context $context;
     private SchemaToClassFactory $s2c;
 
+    private static $staticComponentNameMappings = [
+        "aihosting" => "AIHosting",
+    ];
+
     public static function componentNameToClassName(string $name): string {
         $name = str_replace("de.mittwald.v1.", "", $name);
+
+        if (isset(self::$staticComponentNameMappings[$name])) {
+            return self::$staticComponentNameMappings[$name];
+        }
+
         $parts = explode(".", $name);
-        $parts = array_map(fn ($p) => ClassNameConverter::toClassName($p), $parts);
+        $parts = array_map(function ($p) {
+            if (isset(self::$staticComponentNameMappings[$p])) {
+                return self::$staticComponentNameMappings[$p];
+            }
+            return ClassNameConverter::toClassName($p);
+        }, $parts);
 
         return implode("\\", $parts);
     }

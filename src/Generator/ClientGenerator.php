@@ -26,6 +26,7 @@ use Laminas\Code\Generator\MethodGenerator;
 use Laminas\Code\Generator\ParameterGenerator;
 use Laminas\Code\Generator\PropertyGenerator;
 use Laminas\Code\Generator\TypeGenerator;
+use Mittwald\ApiToolsPHP\Utils\Strings\ClassNameConverter;
 use Mittwald\ApiToolsPHP\Utils\Strings\StatusTranslator;
 use Symfony\Component\Console\Output\ConsoleOutput;
 
@@ -52,7 +53,7 @@ class ClientGenerator
      */
     public function generate(string $baseNamespace, array $tag): ClientGenerationResult
     {
-        $ifaceName = ucfirst(preg_replace("/[^a-zA-Z0-9]/", "", $tag["name"])) . "Client";
+        $ifaceName = ClassNameConverter::toClassName($tag["name"]) . "Client";
         $clsName   = $ifaceName . "Impl";
 
         $operations       = $this->collectOperations($tag["name"]);
@@ -430,14 +431,27 @@ class ClientGenerator
 
     private function mapOperationId(string $tag, string $operationId): string
     {
-        $lowerTag = preg_quote(strtolower($tag), "/");
+        $spaceToDash = fn(string $in) => str_replace(" ", "-", $in);
+        $dashToSpace = fn(string $in) => str_replace("-", " ", $in);
+        $removeSpaces = fn(string $in) => str_replace(" ", "", $in);
 
-        $operationId = preg_replace("/^{$lowerTag}-/", "", $operationId);
+        $tagPermutations = [
+            $tag |> strtolower(...),
+            $tag |> $spaceToDash(...) |> strtolower(...),
+        ];
+
+        $tagPermutations = array_map(fn ($tag) => preg_quote($tag, "/"), $tagPermutations);
+
+        foreach ($tagPermutations as $tagPermutation) {
+            $operationId = preg_replace("/^{$tagPermutation}-/", "", $operationId);
+        }
+
         $operationId = preg_replace("/^(ssh|sftp)-user-/", "", $operationId);
-        $operationId = str_replace("-", " ", $operationId);
-        $operationId = ucwords($operationId);
-        $operationId = str_replace(" ", "", $operationId);
-        $operationId = lcfirst($operationId);
+        $operationId = $operationId
+            |> $dashToSpace(...)
+            |> ucwords(...)
+            |> $removeSpaces(...)
+            |> lcfirst(...);
 
         return $operationId;
     }
