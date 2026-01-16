@@ -16,7 +16,7 @@ class Lowercaser
         "HTTP",
         "FTP",
         "SFTP",
-
+        "AI",
     ];
 
     public static function abbreviationAwareLowercase(string $input): string

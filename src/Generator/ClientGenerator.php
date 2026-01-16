@@ -349,12 +349,12 @@ class ClientGenerator
                 ],
             ];
 
-            $req = new GeneratorRequest($envelopedResponseSchema, new ValidatedSpecificationFilesItem($responseClassNamespace, $responseClassName, $outputDir), $this->generatorOpts);
-            $req = $req->withReferenceLookup($this->referenceLookup);
-            $req = $req->withAdditionalMethod($factoryMethod);
-            $req = $req->withAdditionalMethod($getResponseMethod);
-            $req = $req->withAdditionalProperty($httpResponseProperty);
-            $req = $req->withAdditionalInterface("\\Mittwald\\ApiClient\\Client\\ResponseContainer");
+            $req = new GeneratorRequest($envelopedResponseSchema, new ValidatedSpecificationFilesItem($responseClassNamespace, $responseClassName, $outputDir), $this->generatorOpts)
+                ->withReferenceLookup($this->referenceLookup)
+                ->withAdditionalMethod($factoryMethod)
+                ->withAdditionalMethod($getResponseMethod)
+                ->withAdditionalProperty($httpResponseProperty)
+                ->withAdditionalInterface("\\Mittwald\\ApiClient\\Client\\ResponseContainer");
 
             if (!NestedObjectProperty::canHandleSchema($responseSchema) && !ReferenceProperty::canHandleSchema($responseSchema) && !ReferenceArrayProperty::canHandleSchema($responseSchema) && !ObjectArrayProperty::canHandleSchema($responseSchema)) {
                 $responseTypes[] = new OperationResponse(
@@ -420,13 +420,11 @@ class ClientGenerator
             $docComment->setTag(new ReturnTag($defaultResponse->type, $defaultResponse->comment));
         }
 
-        $method = new MethodGenerator(name: $methodName);
-        $method->setBody($body);
-        $method->setParameters($parameterGenerators);
-        $method->setReturnType($defaultResponse ? $defaultResponse->type : "void");
-        $method->setDocBlock($docComment);
-
-        return $method;
+        return new MethodGenerator(name: $methodName)
+            ->setBody($body)
+            ->setParameters($parameterGenerators)
+            ->setReturnType($defaultResponse ? $defaultResponse->type : "void")
+            ->setDocBlock($docComment);
     }
 
     private function mapOperationId(string $tag, string $operationId): string
