@@ -22,7 +22,7 @@
   "require": {
     "php": "^8.5",
     "symfony/console": "^6.3",
-    "helmich/schema2class": "^3.3.13",
+    "helmich/schema2class": "^4.0.0-beta1",
     "openai-php/client": "^0.10.1",
     "symfony/http-client": "^7.1",
     "nyholm/psr7": "^1.8"
