@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "171561cc13d8520665bb15b74cb6f41a",
+    "content-hash": "10c05b3e03fa52910bf80e2477a7a2db",
     "packages": [
         {
             "name": "composer/semver",
@@ -85,16 +85,16 @@
         },
         {
             "name": "helmich/schema2class",
-            "version": "v4.0.0-beta1",
+            "version": "v4.0.0-beta2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/martin-helmich/php-schema2class.git",
-                "reference": "3e8155bf3ab2835a70c52aa65bdb4a8207045059"
+                "reference": "23036de4639516d8e95335dab6e9412add70df1c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/martin-helmich/php-schema2class/zipball/3e8155bf3ab2835a70c52aa65bdb4a8207045059",
-                "reference": "3e8155bf3ab2835a70c52aa65bdb4a8207045059",
+                "url": "https://api.github.com/repos/martin-helmich/php-schema2class/zipball/23036de4639516d8e95335dab6e9412add70df1c",
+                "reference": "23036de4639516d8e95335dab6e9412add70df1c",
                 "shasum": ""
             },
             "require": {
@@ -135,7 +135,7 @@
             "description": "Build PHP classes from JSON schema definitions",
             "support": {
                 "issues": "https://github.com/martin-helmich/php-schema2class/issues",
-                "source": "https://github.com/martin-helmich/php-schema2class/tree/v4.0.0-beta1"
+                "source": "https://github.com/martin-helmich/php-schema2class/tree/v4.0.0-beta2"
             },
             "funding": [
                 {
@@ -147,7 +147,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-01-16T12:15:28+00:00"
+            "time": "2026-07-08T09:20:47+00:00"
         },
         {
             "name": "justinrainbow/json-schema",
