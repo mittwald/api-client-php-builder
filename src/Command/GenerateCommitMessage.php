@@ -20,8 +20,11 @@ class GenerateCommitMessage extends Command
 
     protected function initialize(InputInterface $input, OutputInterface $output): void
     {
-        $yourApiKey = getenv('OPENAI_API_KEY');
-        $this->client = OpenAI::client($yourApiKey);
+        $apiKey = getenv('OPENAI_API_KEY');
+        $this->client = (new OpenAI\Factory)
+			->withBaseUri(getenv('OPENAI_BASE_URL') ?: 'https://llm.aihosting.mittwald.de/v1')
+			->withApiKey($apiKey)
+			->make();
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -43,7 +46,7 @@ class GenerateCommitMessage extends Command
         }
 
         $result = $this->client->chat()->create([
-            'model' => 'gpt-4o-mini',
+            'model' => getenv('OPENAI_MODEL') ?: 'gpt-4o-mini',
             'messages' => [
                 ['role' => 'system', 'content' => 'You will be provided a Git diff. Generate a commit message from it, following the conventional commit message format. Provide the output in plain text, without any additional formatting.'],
                 ['role' => 'user', 'content' => $diff],
