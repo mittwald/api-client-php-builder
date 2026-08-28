@@ -82,6 +82,7 @@ class ComponentGenerator
 
         $request = new GeneratorRequest($component, $spec, $opts);
         $request = $request->withReferenceLookup(new SchemaReferenceLookup($this->context));
+        $request = $request->withUnknownEnumFallback();
         $request = $request->withHook(new class($component, $componentName) implements ClassCreatedHook {
             function __construct(private readonly array $component, private readonly string $componentName) {}
 

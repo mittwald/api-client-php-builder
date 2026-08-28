@@ -130,9 +130,15 @@ class ClientGenerator
                 continue;
             }
 
-            $methods[] = $this->buildOperationMethod($namespace, $tag, $path, $method, $operationData);
+            $methodName = $this->mapOperationId($tag, $operationData["operationId"]);
+            if (isset($methods[$methodName])) {
+                continue;
+            }
+
+            $methods[$methodName] = $this->buildOperationMethod($namespace, $tag, $path, $method, $operationData);
         }
-        return $methods;
+
+        return array_values($methods);
     }
 
     private function buildOperationRequestClass(string $namespace, string $methodName, string $httpMethod, string $path, array $operationData): string
@@ -351,6 +357,7 @@ class ClientGenerator
 
             $req = new GeneratorRequest($envelopedResponseSchema, new ValidatedSpecificationFilesItem($responseClassNamespace, $responseClassName, $outputDir), $this->generatorOpts)
                 ->withReferenceLookup($this->referenceLookup)
+                ->withUnknownEnumFallback()
                 ->withAdditionalMethod($factoryMethod)
                 ->withAdditionalMethod($getResponseMethod)
                 ->withAdditionalProperty($httpResponseProperty)
