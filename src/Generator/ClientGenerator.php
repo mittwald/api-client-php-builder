@@ -139,10 +139,9 @@ class ClientGenerator
                 continue;
             }
 
-            $methods[$methodName] = $this->buildOperationMethod($namespace, $tag, $path, $method, $operationData);
+            $methods[] = $this->buildOperationMethod($namespace, $tag, $path, $method, $operationData);
         }
-
-        return array_values($methods);
+        return $methods;
     }
 
     private function buildOperationRequestClass(string $namespace, string $methodName, string $httpMethod, string $path, array $operationData): string
