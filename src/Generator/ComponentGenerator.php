@@ -68,6 +68,11 @@ class ComponentGenerator
             return;
         }
 
+        // Add a fallback case for values added to the API after generation; see TolerantReferencedTypeEnum.
+        if (isset($component["enum"]) && ($component["type"] ?? null) === "string") {
+            $component["enum"][] = TolerantReferencedTypeEnum::FallbackValue;
+        }
+
         $className = $baseNamespace . "\\" . static::componentNameToClassName($componentName);
         $namespace = substr($className, 0, strrpos($className, "\\"));
         $classNameWithoutNamespace = substr($className, strrpos($className, "\\") + 1);
@@ -81,7 +86,7 @@ class ComponentGenerator
             ->withNewValidatorClassExpr("new \Mittwald\ApiClient\Validator\Validator()");
 
         $request = new GeneratorRequest($component, $spec, $opts);
-        $request = $request->withReferenceLookup(new SchemaReferenceLookup($this->context));
+        $request = $request->withReferenceLookup(new SchemaReferenceLookup($this->context, tolerantEnums: true));
         $request = $request->withHook(new class($component, $componentName) implements ClassCreatedHook {
             function __construct(private readonly array $component, private readonly string $componentName) {}
 

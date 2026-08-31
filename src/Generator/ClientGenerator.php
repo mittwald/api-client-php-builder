@@ -34,7 +34,8 @@ class ClientGenerator
 {
     private SchemaToClass $classBuilder;
     private WriterInterface $writer;
-    private SchemaReferenceLookup $referenceLookup;
+    private SchemaReferenceLookup $requestReferenceLookup;
+    private SchemaReferenceLookup $responseReferenceLookup;
 
     public function __construct(
         private readonly Context              $context,
@@ -45,7 +46,10 @@ class ClientGenerator
         $output                = new ConsoleOutput();
         $this->writer          = new FileWriter($output);
         $this->classBuilder    = $s2c->build($this->writer, $output);
-        $this->referenceLookup = new SchemaReferenceLookup($this->context);
+        // Unknown enum values from the API must not break deserialization of responses; in
+        // requests they are still an error on the caller's side and fail before being sent.
+        $this->requestReferenceLookup  = new SchemaReferenceLookup($this->context);
+        $this->responseReferenceLookup = new SchemaReferenceLookup($this->context, tolerantEnums: true);
     }
 
     /**
@@ -254,7 +258,7 @@ class ClientGenerator
         $req = $req->withAdditionalMethod($buildUrlMethod);
         $req = $req->withAdditionalMethod($buildRequestOptionsMethod);
         $req = $req->withAdditionalMethod($withHeaderMethod);
-        $req = $req->withReferenceLookup($this->referenceLookup);
+        $req = $req->withReferenceLookup($this->requestReferenceLookup);
 
         $this->classBuilder->schemaToClass($req);
         return $paramClassNameFQ;
@@ -350,7 +354,7 @@ class ClientGenerator
             ];
 
             $req = new GeneratorRequest($envelopedResponseSchema, new ValidatedSpecificationFilesItem($responseClassNamespace, $responseClassName, $outputDir), $this->generatorOpts)
-                ->withReferenceLookup($this->referenceLookup)
+                ->withReferenceLookup($this->responseReferenceLookup)
                 ->withAdditionalMethod($factoryMethod)
                 ->withAdditionalMethod($getResponseMethod)
                 ->withAdditionalProperty($httpResponseProperty)

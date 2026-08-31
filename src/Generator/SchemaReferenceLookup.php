@@ -9,7 +9,10 @@ use Helmich\Schema2Class\Generator\ReferenceLookup;
 
 class SchemaReferenceLookup implements ReferenceLookup
 {
-    public function __construct(private readonly Context $context)
+    public function __construct(
+        private readonly Context $context,
+        private readonly bool    $tolerantEnums = false,
+    )
     {
     }
 
@@ -79,12 +82,21 @@ class SchemaReferenceLookup implements ReferenceLookup
         return $this->context->schema["components"][$componentType][$name];
     }
 
+    private function buildEnumReference(string $fqcn, array $schema): ReferencedTypeEnum
+    {
+        if ($this->tolerantEnums && ($schema["type"] ?? null) === "string") {
+            return new TolerantReferencedTypeEnum($fqcn);
+        }
+
+        return new ReferencedTypeEnum($fqcn);
+    }
+
     private function buildTypeReference(string $fqcn, array $schema): ReferencedType
     {
         return match (true) {
-            isset($schema["enum"]) => new ReferencedTypeEnum($fqcn),
+            isset($schema["enum"]) => $this->buildEnumReference($fqcn, $schema),
             isset($schema["items"]["\$ref"]) => new ReferencedTypeList($this->lookupReference($schema["items"]["\$ref"])),
-            isset($schema["items"]["enum"]) => new ReferencedTypeList(new ReferencedTypeEnum($fqcn . "Item")),
+            isset($schema["items"]["enum"]) => new ReferencedTypeList($this->buildEnumReference($fqcn . "Item", $schema["items"])),
             isset($schema["items"]) => new ReferencedTypeList($this->buildTypeReference($fqcn . "Item", $schema["items"])),
             isset($schema["type"]) && $schema["type"] === "string" => new ReferencedString(),
             isset($schema["oneOf"]) => $this->buildUnionType($fqcn, $schema["oneOf"]),
