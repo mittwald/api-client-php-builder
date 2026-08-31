@@ -10,6 +10,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class GenerateCommitMessage extends Command
 {
+    public const DefaultModel = 'gpt-oss-120b';
+
     private OpenAI\Client $client;
 
     protected function configure()
@@ -46,7 +48,7 @@ class GenerateCommitMessage extends Command
         }
 
         $result = $this->client->chat()->create([
-            'model' => getenv('OPENAI_MODEL') ?: 'gpt-4o-mini',
+            'model' => getenv('OPENAI_MODEL') ?: self::DefaultModel,
             'messages' => [
                 ['role' => 'system', 'content' => 'You will be provided a Git diff. Generate a commit message from it, following the conventional commit message format. Provide the output in plain text, without any additional formatting.'],
                 ['role' => 'user', 'content' => $diff],
