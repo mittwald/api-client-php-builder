@@ -134,11 +134,6 @@ class ClientGenerator
                 continue;
             }
 
-            $methodName = $this->mapOperationId($tag, $operationData["operationId"]);
-            if (isset($methods[$methodName])) {
-                continue;
-            }
-
             $methods[] = $this->buildOperationMethod($namespace, $tag, $path, $method, $operationData);
         }
         return $methods;
