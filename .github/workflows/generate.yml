@@ -63,6 +63,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.MACHINE_USER_TOKEN }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: ${{ secrets.OPENAI_MODEL }}
         run: |
           set -ex
           
